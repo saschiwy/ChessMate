@@ -1,0 +1,5 @@
+C:/_Prj/ChessMate/ChessMate/out/build/x64-Debug (default)/CMakeFiles/edit_cache.dir
+C:/_Prj/ChessMate/ChessMate/out/build/x64-Debug (default)/CMakeFiles/rebuild_cache.dir
+C:/_Prj/ChessMate/ChessMate/out/build/x64-Debug (default)/ChessMate/CMakeFiles/ChessMate.dir
+C:/_Prj/ChessMate/ChessMate/out/build/x64-Debug (default)/ChessMate/CMakeFiles/edit_cache.dir
+C:/_Prj/ChessMate/ChessMate/out/build/x64-Debug (default)/ChessMate/CMakeFiles/rebuild_cache.dir
