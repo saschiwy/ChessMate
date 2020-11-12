@@ -34,7 +34,9 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
+  include("C:/_Prj/ChessMate/ChessMate/out/build/x64-Debug (default)/googletest-build/cmake_install.cmake")
   include("C:/_Prj/ChessMate/ChessMate/out/build/x64-Debug (default)/ChessMate/cmake_install.cmake")
+  include("C:/_Prj/ChessMate/ChessMate/out/build/x64-Debug (default)/Tests/cmake_install.cmake")
 
 endif()
 

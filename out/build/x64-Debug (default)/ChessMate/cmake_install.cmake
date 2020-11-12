@@ -32,3 +32,9 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
   set(CMAKE_CROSSCOMPILING "FALSE")
 endif()
 
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for each subdirectory.
+  include("C:/_Prj/ChessMate/ChessMate/out/build/x64-Debug (default)/ChessMate/ChessEngine/cmake_install.cmake")
+
+endif()
+
