@@ -3,6 +3,9 @@
 namespace ChessNS
 {
     Board::Board()
+        : Board(BoardStartType::standard) { }
+
+    Board::Board(BoardStartType boardStart)
     {
         const Field empty
         {
@@ -15,11 +18,7 @@ namespace ChessNS
         for (size_t r = 0; r < 8; r++)
             for (size_t c = 0; c < 8; c++)
                 Matrix::at(r, c).position.set(static_cast<int>(r), static_cast<int>(c));
-    }
 
-    Board::Board(BoardStartType boardStart)
-        : Board()
-    {
         if (boardStart == BoardStartType::standard)
         {
             // Create Pawns
@@ -46,9 +45,6 @@ namespace ChessNS
             createFigure(at(BoardRow::r8, BoardColumn::cF), FigureType::bishop, Color::black);
             createFigure(at(BoardRow::r8, BoardColumn::cG), FigureType::knight, Color::black);
             createFigure(at(BoardRow::r8, BoardColumn::cH), FigureType::rook, Color::black);
-
-            _kings[0] = &at(BoardRow::r1, BoardColumn::cE);
-            _kings[1] = &at(BoardRow::r8, BoardColumn::cE);
         }
     }
 
@@ -64,7 +60,6 @@ namespace ChessNS
 
     MoveResult Board::allowed(Position origin, Position destination) const
     {
-        // copy this
         auto back = *this;
         return back.move(origin, destination);
     }
@@ -97,10 +92,58 @@ namespace ChessNS
 
     bool Board::checkChess(Color color)
     {
-        auto* kingField = _kings[static_cast<unsigned>(color) - 1];
+        auto* kingField = getFigure(color, FigureType::king);
         if (kingField == nullptr)
             return false;
         return isFieldUnderAttack(*kingField, color == Color::white ? Color::black : Color::white);
+    }
+
+    Ending Board::checkVictory()
+    {
+        auto* kingField = getFigure(_currentColorTurn, FigureType::king);
+
+        // King can still move
+        if (!getAllPossibleMoves(kingField->position).empty())
+            return Ending::none;
+
+        // Something can move
+        if (!getAllPossibleMoves(_currentColorTurn).empty())
+            return Ending::none;
+
+        return checkChess(_currentColorTurn)
+                   ? (_currentColorTurn == Color::white
+                          ? Ending::victoryBlack
+                          : Ending::victoryWhite)
+                   : Ending::draw;
+    }
+
+    std::vector<Movement> Board::getAllPossibleMoves(Position origin)
+    {
+        std::vector<Movement> result;
+
+        if (at(origin).empty)
+            return result;
+
+        for (auto& field : *this)
+        {
+            const auto res = allowed(origin, field.position);
+            if (MoveResult::invalid != res)
+                result.emplace_back(origin, field.position, at(origin).figure.getType(), res, at(origin).figure.getColor());
+        }
+
+        return result;
+    }
+
+    std::vector<Movement> Board::getAllPossibleMoves(Color ofColor)
+    {
+        std::vector<Movement> result;
+        auto                  fields = getAllOccupiedFields(ofColor);
+        for (auto&& field : fields)
+        {
+            auto moves = getAllPossibleMoves(field->position);
+            result.insert(result.end(), moves.begin(), moves.end());
+        }
+        return result;
     }
 
     MoveResult Board::move(Field& origin, Field& destination, bool execute)
@@ -200,12 +243,6 @@ namespace ChessNS
         const auto dist        = destination.position - origin.position;
         const auto coordinates = dist.getCord();
 
-        auto moveFigureForKing = [this](Field& o, Field& d)
-        {
-            moveFigure(o, d);
-            _kings[static_cast<unsigned>(d.figure.getColor()) - 1] = &d;
-        };
-
         // castling
         if (std::abs(coordinates.second) == 2 && std::abs(coordinates.first) == 0 && origin.figure.nbrOfMovements() == 0)
         {
@@ -228,7 +265,7 @@ namespace ChessNS
                 // Castling is valid
                 if (execute)
                 {
-                    moveFigureForKing(origin, destination);
+                    moveFigure(origin, destination);
                     moveFigure(at(row, BoardColumn::cH), at(row, BoardColumn::cF));
                 }
                 return MoveResult::valid;
@@ -250,7 +287,7 @@ namespace ChessNS
             // Castling is valid
             if (execute)
             {
-                moveFigureForKing(origin, destination);
+                moveFigure(origin, destination);
                 moveFigure(at(row, BoardColumn::cA), at(row, BoardColumn::cD));
             }
             return MoveResult::valid;
@@ -261,13 +298,13 @@ namespace ChessNS
 
         if (destination.empty)
         {
-            if (execute) moveFigureForKing(origin, destination);
+            if (execute) moveFigure(origin, destination);
             return MoveResult::valid;
         }
 
         if (destination.figure.isOpponent(origin.figure))
         {
-            if (execute) moveFigureForKing(origin, destination);
+            if (execute) moveFigure(origin, destination);
             return MoveResult::capture;
         }
 
@@ -427,5 +464,16 @@ namespace ChessNS
         }
 
         return result;
+    }
+
+    Field* Board::getFigure(Color byColor, FigureType figureType)
+    {
+        for (auto& field : *this)
+        {
+            if (field.figure.getType() == figureType && field.figure.getColor() == byColor)
+                return &field;
+        }
+
+        return nullptr;
     }
 }

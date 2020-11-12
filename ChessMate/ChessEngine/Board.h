@@ -3,6 +3,7 @@
 #include "BasicUtils/Matrix.h"
 #include "ChessTypes.h"
 #include "Figure.h"
+#include "Movement.h"
 
 namespace ChessNS
 {
@@ -15,6 +16,9 @@ namespace ChessNS
 
     #ifdef BUILD_TESTS
     class TestBoard;
+    class TestBoardRelationalMove;
+    class TestBoardDiagonalMove;
+    class TestBoardRankFieldMove;
     #endif
 
     class Board : public Matrix<Field>
@@ -23,13 +27,14 @@ namespace ChessNS
 
         #ifdef BUILD_TESTS
         friend TestBoard;
+        friend TestBoardRelationalMove;
+        friend TestBoardDiagonalMove;
+        friend TestBoardRankFieldMove;
         #endif
 
         enum class BoardStartType { empty, standard };
 
         Board();
-
-        explicit Board(BoardStartType boardStart);
 
         Field& at(Position position);
 
@@ -41,7 +46,14 @@ namespace ChessNS
 
         bool checkChess(Color color);
 
+        Ending checkVictory();
+
+        std::vector<Movement> getAllPossibleMoves(Position origin);
+
+        std::vector<Movement> getAllPossibleMoves(Color ofColor);
+
     private:
+        explicit Board(BoardStartType boardStart);
 
         MoveResult move(Field& origin, Field& destination, bool execute);
 
@@ -65,8 +77,9 @@ namespace ChessNS
 
         std::vector<Field*> getAllOccupiedFields(Color ofColor);
 
+        Field* getFigure(Color byColor, FigureType figureType);
+
         unsigned _currentMove{1};
         Color    _currentColorTurn{Color::white};
-        Field*   _kings[2]{};
     };
 }

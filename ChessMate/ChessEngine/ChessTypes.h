@@ -13,6 +13,8 @@ namespace ChessNS
 
     enum class BoardRow { r1, r2, r3, r4, r5, r6, r7, r8 };
 
+    enum class Ending { none, victoryWhite, victoryBlack, draw };
+
     struct Position
     {
         Position();
@@ -47,11 +49,5 @@ namespace ChessNS
         int  _row{};
         int  _column{};
         bool _valid{};
-    };
-
-    struct Move
-    {
-        Position origin{};
-        Position destination{};
     };
 }
