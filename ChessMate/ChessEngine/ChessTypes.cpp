@@ -82,4 +82,20 @@ namespace ChessNS
     {
         return Position(lhs._row - rhs._row, lhs._column - rhs._column);
     }
+
+    Movement::Movement(const Position& destination, const Position& origin, FigureType type, MoveResult result, Color byColor)
+        : destination(destination),
+          origin(origin),
+          type(type),
+          result(result),
+          byColor(byColor),
+          round(0) {}
+
+    Movement::Movement(const Position& destination, const Position& origin, FigureType type, MoveResult result, Color byColor, unsigned round)
+        : destination(destination),
+          origin(origin),
+          type(type),
+          result(result),
+          byColor(byColor),
+          round(round) {}
 }

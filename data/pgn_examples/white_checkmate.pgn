@@ -1,0 +1,21 @@
+[Event "FICS rated standard game"]
+[Site "FICS freechess.org"]
+[Date "2012.08.28"]
+[Round "?"]
+[White "alafuzos"]
+[Black "parrot"]
+[Result "0-1"]
+[WhiteElo "2008"]
+[BlackElo "2294"]
+[ECO "A45"]
+[FICSGamesDBGameNo "313408309"]
+[BlackIsComp "Yes"]
+[TimeControl "1680+1"]
+[Time "05:28:00"]
+[WhiteClock "0:28:00.000"]
+[BlackClock "0:28:00.000"]
+[PlyCount "76"]
+
+1. d4 Nf6 2.c3 b6 3.Bf4 g6 4.e3 Bg7 5.Be2 d6 6.Nf3 O-O 7.O-O Bb7 8.h3 c5 9.a4 Nc6 10.Nbd2 Qd7 11.Nc4 Qc8 12.Qb3 Ba6 13.Rfe1 d5 14.Nce5 Na5 15.Qc2 Bxe2 16.Qxe2 Ne4 17.Nd2 Nxd2 18.Qxd2 Nb3 19.Qc2 Nxa1 20.Rxa1 Bxe5 21.Bxe5 Qf5 22.Qb3 Qe6 23.a5 f6 24.Bg3 Rfc8 25.axb6 axb6 26.Rxa8 Rxa8 27.dxc5 Ra1+ 28.Kh2 bxc5 29.Qb8+ Kg7 30.b4 d4 31.cxd4 cxd4 32.exd4 Qe1 33.Bf4 Qxf2 34.Qc7 Qg1+ 35.Kg3 Ra3+ 36.Kh4 g5+ 37.Kh5 Qd1+ 38.g4 Rxh3# 
+{White checkmated}
+0-1

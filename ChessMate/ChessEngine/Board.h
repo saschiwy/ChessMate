@@ -3,7 +3,6 @@
 #include "BasicUtils/Matrix.h"
 #include "ChessTypes.h"
 #include "Figure.h"
-#include "Movement.h"
 
 namespace ChessNS
 {
@@ -46,11 +45,15 @@ namespace ChessNS
 
         bool checkChess(Color color);
 
-        Ending checkVictory();
+        GameResult checkVictory();
+
+        bool hasEnded() const;
 
         std::vector<Movement> getAllPossibleMoves(Position origin);
 
         std::vector<Movement> getAllPossibleMoves(Color ofColor);
+
+        std::vector<Movement> getAllMadeMoves() const;
 
     private:
         explicit Board(BoardStartType boardStart);
@@ -79,7 +82,9 @@ namespace ChessNS
 
         Field* getFigure(Color byColor, FigureType figureType);
 
-        unsigned _currentMove{1};
-        Color    _currentColorTurn{Color::white};
+        unsigned              _currentMove{1};
+        Color                 _currentColorTurn{Color::white};
+        bool                  _ended{false};
+        std::vector<Movement> _movements;
     };
 }

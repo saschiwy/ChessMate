@@ -658,7 +658,8 @@ namespace ChessNS
         ASSERT_EQ(MoveResult::valid, _board.move(whiteKingPos, whiteKingDes));
         ASSERT_EQ(MoveResult::valid, _board.move(blackKingPos, blackKingDes));
 
-        ASSERT_EQ(Ending::none, _board.checkVictory());
+        ASSERT_EQ(GameResult::none, _board.checkVictory());
+        ASSERT_FALSE(_board.hasEnded());
     }
 
     TEST_F(TestBoard, checkVictory_kingCanNotMoveAndChess_victoryWhite)
@@ -681,7 +682,8 @@ namespace ChessNS
         createFigure(_board.at(rook1Pos), FigureType::rook, Color::white);
         createFigure(_board.at(rook2Pos), FigureType::rook, Color::white);
 
-        ASSERT_EQ(Ending::victoryWhite, _board.checkVictory());
+        ASSERT_EQ(GameResult::victoryWhite, _board.checkVictory());
+        ASSERT_TRUE(_board.hasEnded());
     }
 
     TEST_F(TestBoard, checkVictory_kingCanNotMoveAndChess_victoryBlack)
@@ -703,7 +705,8 @@ namespace ChessNS
         createFigure(_board.at(rook1Pos), FigureType::rook, Color::black);
         createFigure(_board.at(rook2Pos), FigureType::rook, Color::black);
 
-        ASSERT_EQ(Ending::victoryBlack, _board.checkVictory());
+        ASSERT_EQ(GameResult::victoryBlack, _board.checkVictory());
+        ASSERT_TRUE(_board.hasEnded());
     }
 
     TEST_F(TestBoard, checkVictory_kingCanNotMoveAndNoChess_draw)
@@ -726,6 +729,7 @@ namespace ChessNS
         createFigure(_board.at(rook1Pos), FigureType::rook, Color::white);
         createFigure(_board.at(rook2Pos), FigureType::rook, Color::white);
 
-        ASSERT_EQ(Ending::draw, _board.checkVictory());
+        ASSERT_EQ(GameResult::draw, _board.checkVictory());
+        ASSERT_TRUE(_board.hasEnded());
     }
 }

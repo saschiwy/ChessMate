@@ -66,6 +66,9 @@ namespace ChessNS
 
     MoveResult Board::move(Position origin, Position destination)
     {
+        if (_ended)
+            return MoveResult::invalid;
+
         if (origin == destination)
             return MoveResult::invalid;
 
@@ -84,7 +87,8 @@ namespace ChessNS
         if (back.checkChess(back.at(destination).figure.getColor()))
             return MoveResult::invalid;
 
-        *this             = back;
+        *this = back;
+        _movements.emplace_back(origin, destination, at(destination).figure.getType(), result, _currentColorTurn, _currentMove / 2 + 1);
         _currentColorTurn = _currentColorTurn == Color::white ? Color::black : Color::white;
         ++_currentMove;
         return result;
@@ -98,23 +102,29 @@ namespace ChessNS
         return isFieldUnderAttack(*kingField, color == Color::white ? Color::black : Color::white);
     }
 
-    Ending Board::checkVictory()
+    GameResult Board::checkVictory()
     {
         auto* kingField = getFigure(_currentColorTurn, FigureType::king);
 
         // King can still move
         if (!getAllPossibleMoves(kingField->position).empty())
-            return Ending::none;
+            return GameResult::none;
 
         // Something can move
         if (!getAllPossibleMoves(_currentColorTurn).empty())
-            return Ending::none;
+            return GameResult::none;
 
+        _ended = true;
         return checkChess(_currentColorTurn)
                    ? (_currentColorTurn == Color::white
-                          ? Ending::victoryBlack
-                          : Ending::victoryWhite)
-                   : Ending::draw;
+                          ? GameResult::victoryBlack
+                          : GameResult::victoryWhite)
+                   : GameResult::draw;
+    }
+
+    bool Board::hasEnded() const
+    {
+        return _ended;
     }
 
     std::vector<Movement> Board::getAllPossibleMoves(Position origin)
@@ -144,6 +154,11 @@ namespace ChessNS
             result.insert(result.end(), moves.begin(), moves.end());
         }
         return result;
+    }
+
+    std::vector<Movement> Board::getAllMadeMoves() const
+    {
+        return _movements;
     }
 
     MoveResult Board::move(Field& origin, Field& destination, bool execute)
