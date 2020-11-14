@@ -43,9 +43,17 @@ namespace ChessNS
 
         MoveResult move(Position origin, Position destination);
 
-        bool checkChess(Color color);
+        MoveResult allowed(Movement movement) const;
+
+        bool changeFigureType(const Position& position, FigureType figure);
+
+        MoveResult move(Movement movement);
+
+        bool isCheck(Color color);
 
         GameResult checkVictory();
+
+        GameResult checkVictory(Color againstColor);
 
         bool hasEnded() const;
 
@@ -57,6 +65,10 @@ namespace ChessNS
 
     private:
         explicit Board(BoardStartType boardStart);
+
+        MoveResult move(Position origin, Position destination, bool checkVictory);
+
+        MoveResult allowed(Position origin, Position destination, bool checkVictory) const;
 
         MoveResult move(Field& origin, Field& destination, bool execute);
 

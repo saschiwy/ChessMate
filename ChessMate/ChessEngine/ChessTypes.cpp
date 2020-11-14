@@ -4,7 +4,7 @@ namespace ChessNS
 {
     Position::Position()
     {
-        set(0, 0);
+        set(-1, -1);
     }
 
     Position::Position(const BoardRow nRow, const BoardColumn nColumn)

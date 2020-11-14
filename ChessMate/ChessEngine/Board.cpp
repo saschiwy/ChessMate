@@ -48,6 +48,51 @@ namespace ChessNS
         }
     }
 
+    MoveResult Board::move(Position origin, Position destination, bool checkVictory)
+    {
+        if (_ended)
+            return MoveResult::invalid;
+
+        if (origin == destination)
+            return MoveResult::invalid;
+
+        if (!destination.isValid())
+            return MoveResult::invalid;
+
+        auto       back          = *this;
+        auto       result        = back.move(back.at(origin), back.at(destination), true);
+        const auto currentColor  = back.at(destination).figure.getColor();
+        const auto opponentColor = currentColor == Color::white ? Color::black : Color::white;
+
+        if (result == MoveResult::invalid)
+            return MoveResult::invalid;
+
+        if (back.isCheck(currentColor))
+            return MoveResult::invalid;
+
+        if (back.isCheck(opponentColor))
+            result = MoveResult::check;
+
+        if (checkVictory)
+        {
+            const auto vic = back.checkVictory(opponentColor);
+            if (vic == GameResult::victoryBlack || vic == GameResult::victoryWhite)
+                result = MoveResult::checkmate;
+        }
+
+        *this = back;
+        _movements.emplace_back(origin, destination, at(destination).figure.getType(), result, _currentColorTurn, _currentMove / 2 + 1);
+        _currentColorTurn = opponentColor;
+        ++_currentMove;
+        return result;
+    }
+
+    MoveResult Board::allowed(Position origin, Position destination, bool checkVictory) const
+    {
+        auto back = *this;
+        return back.move(origin, destination, checkVictory);
+    }
+
     Field& Board::at(Position position)
     {
         return Matrix::at(static_cast<size_type>(position.row), static_cast<size_type>(position.column));
@@ -60,41 +105,66 @@ namespace ChessNS
 
     MoveResult Board::allowed(Position origin, Position destination) const
     {
-        auto back = *this;
-        return back.move(origin, destination);
+        return allowed(origin, destination, true);
     }
 
     MoveResult Board::move(Position origin, Position destination)
     {
-        if (_ended)
-            return MoveResult::invalid;
-
-        if (origin == destination)
-            return MoveResult::invalid;
-
-        if (!destination.isValid())
-            return MoveResult::invalid;
-
         if (at(origin).figure.getColor() != _currentColorTurn)
             return MoveResult::invalid;
 
-        auto       back   = *this;
-        const auto result = back.move(back.at(origin), back.at(destination), true);
+        return move(origin, destination, true);
+    }
 
-        if (result == MoveResult::invalid)
-            return MoveResult::invalid;
+    MoveResult Board::allowed(Movement movement) const
+    {
+        auto back = *this;
+        return back.move(movement);
+    }
 
-        if (back.checkChess(back.at(destination).figure.getColor()))
-            return MoveResult::invalid;
+    bool Board::changeFigureType(const Position& position, FigureType figure)
+    {
+        if (at(position).empty)
+            return false;
 
-        *this = back;
-        _movements.emplace_back(origin, destination, at(destination).figure.getType(), result, _currentColorTurn, _currentMove / 2 + 1);
-        _currentColorTurn = _currentColorTurn == Color::white ? Color::black : Color::white;
-        ++_currentMove;
+        at(position).figure.setType(figure);
+        return true;
+    }
+
+    MoveResult Board::move(Movement movement)
+    {
+        if (movement.origin.isValid())
+            return move(movement.origin, movement.destination);
+
+        // estimate origin
+        const auto fields = getAllOccupiedFields(movement.byColor);
+        auto       result = MoveResult::invalid;
+
+        for (auto* f : fields)
+        {
+            if (f->figure.getType() != movement.type)
+                continue;
+
+            if (move(*f, at(movement.destination), false) != MoveResult::invalid)
+            {
+                const auto rc = movement.origin.getCord();
+                if ((rc.first == -1 && rc.second == -1)
+                    || (rc.first != -1 && f->position.getCord().first == rc.first)
+                    || (rc.second != -1 && f->position.getCord().second == rc.second))
+                {
+                    result = move(f->position, movement.destination);
+                    break;
+                }
+            }
+        }
+
+        if (movement.promotedTo != FigureType::none)
+            changeFigureType(movement.destination, movement.promotedTo);
+
         return result;
     }
 
-    bool Board::checkChess(Color color)
+    bool Board::isCheck(Color color)
     {
         auto* kingField = getFigure(color, FigureType::king);
         if (kingField == nullptr)
@@ -104,19 +174,26 @@ namespace ChessNS
 
     GameResult Board::checkVictory()
     {
-        auto* kingField = getFigure(_currentColorTurn, FigureType::king);
+        return checkVictory(_currentColorTurn);
+    }
+
+    GameResult Board::checkVictory(Color againstColor)
+    {
+        auto* kingField = getFigure(againstColor, FigureType::king);
+        if (kingField == nullptr)
+            return GameResult::none;
 
         // King can still move
         if (!getAllPossibleMoves(kingField->position).empty())
             return GameResult::none;
 
         // Something can move
-        if (!getAllPossibleMoves(_currentColorTurn).empty())
+        if (!getAllPossibleMoves(againstColor).empty())
             return GameResult::none;
 
         _ended = true;
-        return checkChess(_currentColorTurn)
-                   ? (_currentColorTurn == Color::white
+        return isCheck(againstColor)
+                   ? (againstColor == Color::white
                           ? GameResult::victoryBlack
                           : GameResult::victoryWhite)
                    : GameResult::draw;
@@ -136,7 +213,7 @@ namespace ChessNS
 
         for (auto& field : *this)
         {
-            const auto res = allowed(origin, field.position);
+            const auto res = allowed(origin, field.position, false);
             if (MoveResult::invalid != res)
                 result.emplace_back(origin, field.position, at(origin).figure.getType(), res, at(origin).figure.getColor());
         }
