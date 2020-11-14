@@ -99,5 +99,63 @@ namespace ChessNS
                 ASSERT_EQ(expectedFigures[row][col].getColor(), board.at(Position(row, col)).figure.getColor());
                 ASSERT_EQ(expectedFigures[row][col].getType(), board.at(Position(row, col)).figure.getType());
             }
+
+        auto madeMoves = board.getAllMadeMoves();
+        ASSERT_EQ(expectedMovements, madeMoves.size());
+
+        for (size_t i = 0; i < expectedMovements; i++)
+        {
+            ASSERT_EQ(game.movements.at(i).byColor, madeMoves.at(i).byColor);
+            ASSERT_EQ(game.movements.at(i).destination, madeMoves.at(i).destination);
+            ASSERT_EQ(game.movements.at(i).type, madeMoves.at(i).type);
+            ASSERT_EQ(game.movements.at(i).result, madeMoves.at(i).result);
+        }
+    }
+
+    TEST_F(TestPgnParser, parseSingleGame_completeGamePlusBoardMultipleEventsAtOnce_BoardAndResultAreEqual)
+    {
+        Board      board;
+        PgnParser  parser;
+        const auto game = parser.parseSingleGame("./pgn_examples/promotion_with_checkmate_and_enpassant.pgn");
+
+        // Create expected Results
+        const auto expectedMovements = 41;
+        const auto expectedResult    = GameResult::victoryWhite;
+
+        std::vector<Figure> expectedFigures;
+        expectedFigures.emplace_back(Figure(FigureType::queen, Color::white, Position(2, 5)));
+        expectedFigures.emplace_back(Figure(FigureType::queen, Color::white, Position(6, 2)));
+        expectedFigures.emplace_back(Figure(FigureType::queen, Color::white, Position(7, 3)));
+        expectedFigures.emplace_back(Figure(FigureType::bishop, Color::black, Position(0, 0)));
+        expectedFigures.emplace_back(Figure(FigureType::bishop, Color::black, Position(3, 3)));
+        expectedFigures.emplace_back(Figure(FigureType::bishop, Color::black, Position(7, 2)));
+
+        ASSERT_EQ(expectedMovements, game.movements.size());
+        ASSERT_EQ(expectedResult, game.result);
+
+        for (size_t i = 0; i < expectedMovements; i++)
+        {
+            const auto res = board.move(game.movements.at(i));
+            if (game.movements.at(i).result != res)
+                FAIL() << "MoveResult {" << static_cast<int>(res) << "} and expected MoveResult {" << static_cast<int>(game.movements.at(i).result) <<
+                    "} differ at movement " << i;
+        }
+
+        for (auto&& expectedFigure : expectedFigures)
+        {
+            ASSERT_EQ(expectedFigure.getColor(), board.at(expectedFigure.getCurrentPosition()).figure.getColor());
+            ASSERT_EQ(expectedFigure.getType(), board.at(expectedFigure.getCurrentPosition()).figure.getType());
+        }
+
+        auto madeMoves = board.getAllMadeMoves();
+        ASSERT_EQ(expectedMovements, madeMoves.size());
+
+        for (size_t i = 0; i < expectedMovements; i++)
+        {
+            ASSERT_EQ(game.movements.at(i).byColor, madeMoves.at(i).byColor);
+            ASSERT_EQ(game.movements.at(i).destination, madeMoves.at(i).destination);
+            ASSERT_EQ(game.movements.at(i).type, madeMoves.at(i).type);
+            ASSERT_EQ(game.movements.at(i).result, madeMoves.at(i).result);
+        }
     }
 }

@@ -81,7 +81,7 @@ namespace ChessNS
         }
 
         *this = back;
-        _movements.emplace_back(origin, destination, at(destination).figure.getType(), result, _currentColorTurn, _currentMove / 2 + 1);
+        _movements.emplace_back(destination, origin, at(destination).figure.getType(), result, _currentColorTurn, _currentMove / 2 + 1);
         _currentColorTurn = opponentColor;
         ++_currentMove;
         return result;
@@ -159,7 +159,19 @@ namespace ChessNS
         }
 
         if (movement.promotedTo != FigureType::none)
+        {
             changeFigureType(movement.destination, movement.promotedTo);
+
+            const auto opponentColor = movement.byColor == Color::white ? Color::black : Color::white;
+            if (isCheck(opponentColor))
+                result = MoveResult::check;
+
+            const auto vic = checkVictory(opponentColor);
+            if (vic == GameResult::victoryBlack || vic == GameResult::victoryWhite)
+                result = MoveResult::checkmate;
+
+            _movements.back().result = result;
+        }
 
         return result;
     }
@@ -289,8 +301,14 @@ namespace ChessNS
             // normal capture
             if (!destination.empty && destination.figure.isOpponent(origin.figure))
             {
+                const auto res =
+                    origin.figure.getColor() == Color::white && destination.position.row == BoardRow::r8 ||
+                    origin.figure.getColor() == Color::black && destination.position.row == BoardRow::r1
+                    ? MoveResult::promotion
+                    : MoveResult::capture;
+
                 if (execute) moveFigure(origin, destination);
-                return MoveResult::capture;
+                return res;
             }
 
             // en passant 
@@ -525,6 +543,8 @@ namespace ChessNS
         {
             const auto res = move(*f, field, false);
             if (res == MoveResult::valid || res == MoveResult::capture)
+                return true;
+            if (res != MoveResult::invalid)
                 return true;
         }
 

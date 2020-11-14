@@ -150,7 +150,9 @@ namespace ChessNS
         // promotion
         if (movement.type == FigureType::pawn && _figureTypes.find(move.back()) != _figureTypes.end())
         {
-            movement.result     = MoveResult::promotion;
+            // Check and checkmate have higher prio
+            if(movement.result != MoveResult::checkmate && movement.result != MoveResult::check)
+                movement.result     = MoveResult::promotion;
             movement.promotedTo = _figureTypes.at(move.back());
             move                = move.substr(0, move.length() - 2);
         }
