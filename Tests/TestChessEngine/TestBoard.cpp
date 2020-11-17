@@ -76,7 +76,8 @@ namespace ChessNS
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(expectedDestination).figure.getType());
 
-        ASSERT_EQ(MoveResult::valid, _board.move(origin, expectedDestination));
+        auto result = _board.move(origin, expectedDestination);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
@@ -93,7 +94,8 @@ namespace ChessNS
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
 
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, expectedDestination));
+        auto result = _board.move(origin, expectedDestination);
+        ASSERT_EQ(MoveResult::invalid, result.moveResult());
 
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
@@ -110,7 +112,9 @@ namespace ChessNS
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
 
-        ASSERT_EQ(MoveResult::capture, _board.move(origin, expectedDestination));
+        auto result = _board.move(origin, expectedDestination);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+        ASSERT_TRUE(result.hasFlag(EventType::capture));
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
@@ -126,7 +130,8 @@ namespace ChessNS
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(expectedDestination).figure.getType());
 
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, expectedDestination));
+        auto result = _board.move(origin, expectedDestination);
+        ASSERT_EQ(MoveResult::invalid, result.moveResult());
 
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(expectedDestination).figure.getType());
@@ -142,7 +147,8 @@ namespace ChessNS
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(expectedDestination).figure.getType());
 
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, expectedDestination));
+        auto result = _board.move(origin, expectedDestination);
+        ASSERT_EQ(MoveResult::invalid, result.moveResult());
 
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(expectedDestination).figure.getType());
@@ -158,7 +164,9 @@ namespace ChessNS
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(expectedDestination).figure.getType());
 
-        ASSERT_EQ(MoveResult::valid, _board.move(origin, expectedDestination));
+        auto result = _board.move(origin, expectedDestination);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+
         ASSERT_EQ(expectedDestination, _board.at(expectedDestination).figure.getCurrentPosition());
         ASSERT_EQ(origin, _board.at(expectedDestination).figure.getPreviousPosition());
 
@@ -170,20 +178,33 @@ namespace ChessNS
     {
         const Position originWhite(BoardRow::r4, BoardColumn::cF);
         const Position originBlack(BoardRow::r7, BoardColumn::cG);
+
+        const Position originWhite2(BoardRow::r4, BoardColumn::cA);
+        const Position originBlack2(BoardRow::r7, BoardColumn::cA);
+
         const Position destinationWhite1(BoardRow::r5, BoardColumn::cF);
-        const Position destinationBlack1(BoardRow::r6, BoardColumn::cG);
-        const Position destinationWhite2(BoardRow::r6, BoardColumn::cG);
-        const Position destinationBlack2(BoardRow::r5, BoardColumn::cG);
+        const Position destinationWhite2(BoardRow::r5, BoardColumn::cA);
+        const Position destinationBlack1(BoardRow::r5, BoardColumn::cG);
+        const Position destinationBlack2(BoardRow::r6, BoardColumn::cA);
+        const Position destinationWhite3(BoardRow::r6, BoardColumn::cG);
 
-        createFigure(_board.at(BoardRow::r1, BoardColumn::cE), FigureType::pawn, Color::white);
         createFigure(_board.at(originWhite), FigureType::pawn, Color::white);
+        createFigure(_board.at(originWhite2), FigureType::pawn, Color::white);
         createFigure(_board.at(originBlack), FigureType::pawn, Color::black);
+        createFigure(_board.at(originBlack2), FigureType::pawn, Color::black);
 
-        ASSERT_EQ(MoveResult::valid, _board.move(Position(BoardRow::r1, BoardColumn::cE), Position(BoardRow::r2, BoardColumn::cE)));
-        ASSERT_EQ(MoveResult::valid, _board.move(originBlack, destinationBlack1));
-        ASSERT_EQ(MoveResult::valid, _board.move(originWhite, destinationWhite1));
-        ASSERT_EQ(MoveResult::valid, _board.move(destinationBlack1, destinationBlack2));
-        ASSERT_EQ(MoveResult::invalid, _board.move(destinationWhite1, destinationWhite2));
+        ASSERT_EQ(MoveResult::valid, _board.move(originWhite, destinationWhite1).moveResult());
+        ASSERT_EQ(MoveResult::valid, _board.move(originBlack, destinationBlack1).moveResult());
+
+        ASSERT_EQ(MoveResult::valid, _board.move(originWhite2, destinationWhite2).moveResult());
+        ASSERT_EQ(MoveResult::valid, _board.move(originBlack2, destinationBlack2).moveResult());
+
+        auto result = _board.move(destinationWhite1, destinationWhite3);
+        ASSERT_EQ(MoveResult::invalid, result.moveResult());
+        ASSERT_FALSE(result.hasFlag(EventType::capture));
+
+        ASSERT_EQ(FigureType::pawn, _board.at(destinationBlack1).figure.getType());
+        ASSERT_EQ(FigureType::pawn, _board.at(destinationWhite2).figure.getType());
     }
 
     TEST_F(TestBoard, movePawn_enPassant_valid)
@@ -197,9 +218,12 @@ namespace ChessNS
         createFigure(_board.at(originWhite), FigureType::pawn, Color::white);
         createFigure(_board.at(originBlack), FigureType::pawn, Color::black);
 
-        ASSERT_EQ(MoveResult::valid, _board.move(originWhite, destinationWhite1));
-        ASSERT_EQ(MoveResult::valid, _board.move(originBlack, destinationBlack1));
-        ASSERT_EQ(MoveResult::capture, _board.move(destinationWhite1, destinationWhite2));
+        ASSERT_EQ(MoveResult::valid, _board.move(originWhite, destinationWhite1).moveResult());
+        ASSERT_EQ(MoveResult::valid, _board.move(originBlack, destinationBlack1).moveResult());
+
+        auto result = _board.move(destinationWhite1, destinationWhite2);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+        ASSERT_TRUE(result.hasFlag(EventType::capture));
 
         ASSERT_EQ(FigureType::none, _board.at(destinationBlack1).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(destinationWhite2).figure.getType());
@@ -215,7 +239,9 @@ namespace ChessNS
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(expectedDestination).figure.getType());
 
-        ASSERT_EQ(MoveResult::promotion, _board.move(origin, expectedDestination));
+        auto result = _board.move(origin, expectedDestination);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+        ASSERT_TRUE(result.hasFlag(EventType::promotion));
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
@@ -232,9 +258,12 @@ namespace ChessNS
         createFigure(_board.at(originWhite), FigureType::pawn, Color::white);
         createFigure(_board.at(originBlack), FigureType::pawn, Color::black);
 
-        ASSERT_EQ(MoveResult::valid, _board.move(originWhite, destinationWhite1));
-        ASSERT_EQ(MoveResult::valid, _board.move(originBlack, destinationBlack1));
-        ASSERT_EQ(MoveResult::capture, _board.allowed(destinationWhite1, destinationWhite2));
+        ASSERT_EQ(MoveResult::valid, _board.move(originWhite, destinationWhite1).moveResult());
+        ASSERT_EQ(MoveResult::valid, _board.move(originBlack, destinationBlack1).moveResult());
+
+        auto result = _board.allowed(destinationWhite1, destinationWhite2);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+        ASSERT_TRUE(result.hasFlag(EventType::capture));
 
         ASSERT_EQ(FigureType::pawn, _board.at(destinationBlack1).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(destinationWhite1).figure.getType());
@@ -252,7 +281,8 @@ namespace ChessNS
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
 
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, expectedDestination));
+        auto result = _board.move(origin, expectedDestination);
+        ASSERT_EQ(MoveResult::invalid, result.moveResult());
 
         ASSERT_EQ(FigureType::pawn, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
@@ -270,7 +300,7 @@ namespace ChessNS
         ASSERT_EQ(FigureType::king, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(target).figure.getType());
 
-        ASSERT_EQ(MoveResult::valid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::valid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::king, _board.at(target).figure.getType());
@@ -295,7 +325,7 @@ namespace ChessNS
         ASSERT_FALSE(target.isValid());
 
         createFigure(_board.at(origin), FigureType::king, Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
         ASSERT_EQ(FigureType::king, _board.at(origin).figure.getType());
     }
 
@@ -307,7 +337,7 @@ namespace ChessNS
         ASSERT_TRUE(target.isValid());
 
         createFigure(_board.at(origin), FigureType::king, Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
         ASSERT_EQ(FigureType::none, _board.at(target).figure.getType());
         ASSERT_EQ(FigureType::king, _board.at(origin).figure.getType());
     }
@@ -320,7 +350,10 @@ namespace ChessNS
         createFigure(_board.at(origin), FigureType::king, Color::white);
         createFigure(_board.at(target), FigureType::pawn, Color::black);
 
-        ASSERT_EQ(MoveResult::capture, _board.move(origin, target));
+        auto result = _board.move(origin, target);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+        ASSERT_TRUE(result.hasFlag(EventType::capture));
+
         ASSERT_EQ(FigureType::king, _board.at(target).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
     }
@@ -334,7 +367,7 @@ namespace ChessNS
         createFigure(_board.at(origin), FigureType::king, Color::white);
         createFigure(_board.at(attacker), FigureType::pawn, Color::black);
 
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
     }
 
     TEST_F(TestBoard, moveKing_castling_valid)
@@ -343,10 +376,13 @@ namespace ChessNS
         const Position target(BoardRow::r1, BoardColumn::cG);
 
         createFigure(_board.at(origin), FigureType::king, Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
 
         createFigure(_board.at(BoardRow::r1, BoardColumn::cH), FigureType::rook, Color::white);
-        ASSERT_EQ(MoveResult::valid, _board.move(origin, target));
+
+        auto result = _board.move(origin, target);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+        ASSERT_TRUE(result.hasFlag(EventType::castling));
 
         ASSERT_EQ(FigureType::king, _board.at(target).figure.getType());
         ASSERT_EQ(FigureType::rook, _board.at(target - Position(0,1)).figure.getType());
@@ -362,7 +398,7 @@ namespace ChessNS
         createFigure(_board.at(BoardRow::r1, BoardColumn::cH), FigureType::rook, Color::white);
         createFigure(_board.at(attacker), FigureType::pawn, Color::black);
 
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
     }
 
     TEST_P(TestBoardRankFieldMove, move_emptyFieldDownToTop_valid)
@@ -371,7 +407,7 @@ namespace ChessNS
         const Position target(BoardRow::r8, BoardColumn::cE);
 
         createFigure(_board.at(origin), GetParam(), Color::white);
-        ASSERT_EQ(MoveResult::valid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::valid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(GetParam(), _board.at(target).figure.getType());
@@ -384,7 +420,10 @@ namespace ChessNS
 
         createFigure(_board.at(origin), GetParam(), Color::white);
         createFigure(_board.at(target), FigureType::pawn, Color::black);
-        ASSERT_EQ(MoveResult::capture, _board.move(origin, target));
+
+        auto result = _board.move(origin, target);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+        ASSERT_TRUE(result.hasFlag(EventType::capture));
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(GetParam(), _board.at(target).figure.getType());
@@ -397,7 +436,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), GetParam(), Color::white);
         createFigure(_board.at(target), GetParam(), Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(GetParam(), _board.at(origin).figure.getType());
         ASSERT_EQ(GetParam(), _board.at(target).figure.getType());
@@ -411,7 +450,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), GetParam(), Color::white);
         createFigure(_board.at(blocker), GetParam(), Color::black);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(GetParam(), _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(target).figure.getType());
@@ -425,7 +464,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), GetParam(), Color::white);
         createFigure(_board.at(blocker), GetParam(), Color::black);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(GetParam(), _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(target).figure.getType());
@@ -439,7 +478,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), GetParam(), Color::white);
         createFigure(_board.at(blocker), GetParam(), Color::black);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(GetParam(), _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(target).figure.getType());
@@ -453,7 +492,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), GetParam(), Color::white);
         createFigure(_board.at(blocker), GetParam(), Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(GetParam(), _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(target).figure.getType());
@@ -467,7 +506,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), GetParam(), Color::white);
         createFigure(_board.at(blocker), GetParam(), Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(GetParam(), _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(target).figure.getType());
@@ -479,7 +518,7 @@ namespace ChessNS
         const Position target(BoardRow::r8, BoardColumn::cG);
 
         createFigure(_board.at(origin), GetParam(), Color::white);
-        ASSERT_EQ(MoveResult::valid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::valid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(GetParam(), _board.at(target).figure.getType());
@@ -507,7 +546,7 @@ namespace ChessNS
                     renewBoard();
                     createFigure(_board.at(origin), testFigureType, Color::white);
 
-                    ASSERT_EQ(MoveResult::valid, _board.move(origin, target));
+                    ASSERT_EQ(MoveResult::valid, _board.move(origin, target).moveResult());
                     ASSERT_EQ(testFigureType, _board.at(target).figure.getType());
                     ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
 
@@ -528,7 +567,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), testFigureType, Color::white);
         createFigure(_board.at(blocker), FigureType::pawn, Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
     }
 
     TEST_P(TestBoardDiagonalMove, move_diagonalEnemieOnTarget_capture)
@@ -539,7 +578,10 @@ namespace ChessNS
 
         createFigure(_board.at(origin), testFigureType, Color::white);
         createFigure(_board.at(target), FigureType::pawn, Color::black);
-        ASSERT_EQ(MoveResult::capture, _board.move(origin, target));
+
+        auto result = _board.move(origin, target);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+        ASSERT_TRUE(result.hasFlag(EventType::capture));
     }
 
     TEST_P(TestBoardDiagonalMove, move_diagonalFriendOnTarget_invalid)
@@ -550,7 +592,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), testFigureType, Color::white);
         createFigure(_board.at(target), FigureType::pawn, Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
     }
 
     INSTANTIATE_TEST_SUITE_P(move_RankAndField, TestBoardDiagonalMove, ::testing::Values(
@@ -563,7 +605,7 @@ namespace ChessNS
         const Position target(BoardRow::r7, BoardColumn::cG);
 
         createFigure(_board.at(origin), FigureType::rook, Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(FigureType::rook, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(target).figure.getType());
@@ -575,7 +617,7 @@ namespace ChessNS
         const Position target(BoardRow::r8, BoardColumn::cG);
 
         createFigure(_board.at(origin), FigureType::bishop, Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
 
         ASSERT_EQ(FigureType::bishop, _board.at(origin).figure.getType());
     }
@@ -601,7 +643,7 @@ namespace ChessNS
 
             renewBoard();
             createFigure(_board.at(origin), FigureType::knight, Color::white);
-            ASSERT_EQ(MoveResult::valid, _board.move(origin, target));
+            ASSERT_EQ(MoveResult::valid, _board.move(origin, target).moveResult());
         }
     }
 
@@ -610,7 +652,7 @@ namespace ChessNS
         const Position origin(BoardRow::r8, BoardColumn::cD);
 
         createFigure(_board.at(origin), FigureType::knight, Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, origin + Position(2,1)));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, origin + Position(2,1)).moveResult());
     }
 
     TEST_F(TestBoard, moveKnight_toFriend_invalid)
@@ -620,7 +662,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), FigureType::knight, Color::white);
         createFigure(_board.at(target), FigureType::pawn, Color::white);
-        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::invalid, _board.move(origin, target).moveResult());
     }
 
     TEST_F(TestBoard, moveKnight_toEnemie_capture)
@@ -630,7 +672,10 @@ namespace ChessNS
 
         createFigure(_board.at(origin), FigureType::knight, Color::white);
         createFigure(_board.at(target), FigureType::pawn, Color::black);
-        ASSERT_EQ(MoveResult::capture, _board.move(origin, target));
+
+        auto result = _board.move(origin, target);
+        ASSERT_EQ(MoveResult::valid, result.moveResult());
+        ASSERT_TRUE(result.hasFlag(EventType::capture));
     }
 
     TEST_F(TestBoard, moveKnight_withFriendBeteween_valid)
@@ -641,7 +686,7 @@ namespace ChessNS
 
         createFigure(_board.at(origin), FigureType::knight, Color::white);
         createFigure(_board.at(nonBlocker), FigureType::pawn, Color::white);
-        ASSERT_EQ(MoveResult::valid, _board.move(origin, target));
+        ASSERT_EQ(MoveResult::valid, _board.move(origin, target).moveResult());
     }
 
     TEST_F(TestBoard, checkVictory_kingCanMove_none)
@@ -655,8 +700,8 @@ namespace ChessNS
         createFigure(_board.at(blackKingPos), FigureType::king, Color::black);
 
         // King has to move to actualize Board pointers for king (only on non standard boards)
-        ASSERT_EQ(MoveResult::valid, _board.move(whiteKingPos, whiteKingDes));
-        ASSERT_EQ(MoveResult::valid, _board.move(blackKingPos, blackKingDes));
+        ASSERT_EQ(MoveResult::valid, _board.move(whiteKingPos, whiteKingDes).moveResult());
+        ASSERT_EQ(MoveResult::valid, _board.move(blackKingPos, blackKingDes).moveResult());
 
         ASSERT_EQ(GameResult::none, _board.checkVictory());
         ASSERT_FALSE(_board.hasEnded());
@@ -675,9 +720,9 @@ namespace ChessNS
         createFigure(_board.at(blackKingPos), FigureType::king, Color::black);
 
         // King has to move to actualize Board pointers for king (only on non standard boards)
-        ASSERT_EQ(MoveResult::valid, _board.move(whiteKingPos, whiteKingDes));
-        ASSERT_EQ(MoveResult::valid, _board.move(blackKingPos, blackKingDes));
-        ASSERT_EQ(MoveResult::valid, _board.move(whiteKingDes, whiteKingPos));
+        ASSERT_EQ(MoveResult::valid, _board.move(whiteKingPos, whiteKingDes).moveResult());
+        ASSERT_EQ(MoveResult::valid, _board.move(blackKingPos, blackKingDes).moveResult());
+        ASSERT_EQ(MoveResult::valid, _board.move(whiteKingDes, whiteKingPos).moveResult());
 
         createFigure(_board.at(rook1Pos), FigureType::rook, Color::white);
         createFigure(_board.at(rook2Pos), FigureType::rook, Color::white);
@@ -688,20 +733,11 @@ namespace ChessNS
 
     TEST_F(TestBoard, checkVictory_kingCanNotMoveAndChess_victoryBlack)
     {
-        const Position whiteKingPos(BoardRow::r1, BoardColumn::cB);
-        const Position whiteKingDes(BoardRow::r1, BoardColumn::cA);
-        const Position blackKingPos(BoardRow::r8, BoardColumn::cG);
-        const Position blackKingDes(BoardRow::r8, BoardColumn::cH);
+        const Position whiteKingPos(BoardRow::r1, BoardColumn::cA);
         const Position rook1Pos(BoardRow::r8, BoardColumn::cA);
         const Position rook2Pos(BoardRow::r8, BoardColumn::cB);
 
         createFigure(_board.at(whiteKingPos), FigureType::king, Color::white);
-        createFigure(_board.at(blackKingPos), FigureType::king, Color::black);
-
-        // King has to move to actualize Board pointers for king (only on non standard boards)
-        ASSERT_EQ(MoveResult::valid, _board.move(whiteKingPos, whiteKingDes));
-        ASSERT_EQ(MoveResult::valid, _board.move(blackKingPos, blackKingDes));
-
         createFigure(_board.at(rook1Pos), FigureType::rook, Color::black);
         createFigure(_board.at(rook2Pos), FigureType::rook, Color::black);
 
@@ -711,24 +747,16 @@ namespace ChessNS
 
     TEST_F(TestBoard, checkVictory_kingCanNotMoveAndNoChess_draw)
     {
-        const Position whiteKingPos(BoardRow::r1, BoardColumn::cB);
-        const Position whiteKingDes(BoardRow::r1, BoardColumn::cA);
-        const Position blackKingPos(BoardRow::r8, BoardColumn::cG);
-        const Position blackKingDes(BoardRow::r8, BoardColumn::cH);
+        const Position blackKingPos(BoardRow::r8, BoardColumn::cH);
         const Position rook1Pos(BoardRow::r7, BoardColumn::cA);
-        const Position rook2Pos(BoardRow::r1, BoardColumn::cG);
+        const Position rook2Pos(BoardRow::r1, BoardColumn::cA);
+        const Position rook2Dest(BoardRow::r1, BoardColumn::cG);
 
-        createFigure(_board.at(whiteKingPos), FigureType::king, Color::white);
         createFigure(_board.at(blackKingPos), FigureType::king, Color::black);
-
-        // King has to move to actualize Board pointers for king (only on non standard boards)
-        ASSERT_EQ(MoveResult::valid, _board.move(whiteKingPos, whiteKingDes));
-        ASSERT_EQ(MoveResult::valid, _board.move(blackKingPos, blackKingDes));
-        ASSERT_EQ(MoveResult::valid, _board.move(whiteKingDes, whiteKingPos));
-
         createFigure(_board.at(rook1Pos), FigureType::rook, Color::white);
         createFigure(_board.at(rook2Pos), FigureType::rook, Color::white);
 
+        ASSERT_EQ(MoveResult::valid, _board.move(rook2Pos, rook2Dest).moveResult());
         ASSERT_EQ(GameResult::draw, _board.checkVictory());
         ASSERT_TRUE(_board.hasEnded());
     }

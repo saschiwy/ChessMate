@@ -83,19 +83,32 @@ namespace ChessNS
         return Position(lhs._row - rhs._row, lhs._column - rhs._column);
     }
 
-    Movement::Movement(const Position& destination, const Position& origin, FigureType type, MoveResult result, Color byColor)
-        : destination(destination),
-          origin(origin),
-          type(type),
-          result(result),
-          byColor(byColor),
-          round(0) {}
+    Movement Movement::invalid() { return Movement(); }
 
-    Movement::Movement(const Position& destination, const Position& origin, FigureType type, MoveResult result, Color byColor, unsigned round)
-        : destination(destination),
-          origin(origin),
-          type(type),
-          result(result),
-          byColor(byColor),
-          round(round) {}
+    bool Movement::valid() { return _result == MoveResult::valid && destination().isValid(); }
+
+    Position& Movement::destination() { return _destination; }
+
+    Position& Movement::origin() { return _origin; }
+
+    FigureType& Movement::figureType() { return _type; }
+
+    MoveResult& Movement::moveResult() { return _result; }
+
+    bool Movement::hasFlag(EventType eventType) { return std::find(_events.begin(), _events.end(), eventType) != _events.end(); }
+
+    void Movement::addFlag(EventType eventType) { if (!hasFlag(eventType)) _events.push_back(eventType); }
+
+    Color& Movement::color() { return _byColor; }
+
+    unsigned& Movement::round() { return _round; }
+
+    FigureType& Movement::promotedTo() { return _promotedTo; }
+
+    void Movement::removeFlag(EventType eventType)
+    {
+        const auto pos = std::find(_events.begin(), _events.end(), eventType);
+        if (pos != _events.end())
+            _events.erase(pos);
+    }
 }

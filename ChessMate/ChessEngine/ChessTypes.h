@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <utility>
 #include <vector>
 
@@ -8,13 +9,23 @@ namespace ChessNS
 
     enum class FigureType { none, king, queen, rook, knight, bishop, pawn };
 
-    enum class MoveResult { invalid, valid, capture, promotion, check, checkmate };
+    enum class MoveResult { invalid, valid };
+
+    enum class EventType { capture, promotion, check, checkmate, castling };
 
     enum class BoardColumn { cA, cB, cC, cD, cE, cF, cG, cH };
 
     enum class BoardRow { r1, r2, r3, r4, r5, r6, r7, r8 };
 
     enum class GameResult { none, victoryWhite, victoryBlack, draw, resignWhite, resignBlack };
+
+    typedef std::vector<EventType> Events;
+
+    class ChessTypes
+    {
+    public:
+        static Color getOpponent(Color color) { return color == Color::white ? Color::black : Color::white; }
+    };
 
     struct Position
     {
@@ -57,23 +68,46 @@ namespace ChessNS
     public:
         Movement() = default;
 
-        Movement(const Position& destination, const Position& origin, FigureType type, MoveResult result, Color byColor);
+        static Movement invalid();
 
-        Movement(const Position& destination, const Position& origin, FigureType type, MoveResult result, Color byColor, unsigned round);
+        bool valid();
 
-        Position   destination{};
-        Position   origin{};
-        FigureType type{};
-        MoveResult result{};
-        Color      byColor{};
-        unsigned   round{};
-        FigureType promotedTo{};
+        Position& destination();
+
+        Position& origin();
+
+        FigureType& figureType();
+
+        MoveResult& moveResult();
+
+        bool hasFlag(EventType eventType);
+
+        void addFlag(EventType eventType);
+
+        Color& color();
+
+        unsigned& round();
+
+        FigureType& promotedTo();
+
+        void removeFlag(EventType eventType);
+
+    private:
+
+        Position   _destination{};
+        Position   _origin{};
+        FigureType _type{};
+        MoveResult _result{};
+        Events     _events{};
+        Color      _byColor{};
+        unsigned   _round{};
+        FigureType _promotedTo{};
     };
 
     class Game
     {
     public:
-        GameResult                result{};
+        GameResult            result{};
         std::vector<Movement> movements{};
     };
 }

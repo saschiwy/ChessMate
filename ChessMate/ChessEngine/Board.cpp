@@ -1,5 +1,7 @@
 #include "Board.h"
 
+#include <utility>
+
 namespace ChessNS
 {
     Board::Board()
@@ -7,12 +9,7 @@ namespace ChessNS
 
     Board::Board(BoardStartType boardStart)
     {
-        const Field empty
-        {
-            true,
-            Position(),
-            Figure()
-        };
+        const Field empty;
 
         Matrix::assign(8, 8, empty);
         for (size_t r = 0; r < 8; r++)
@@ -48,46 +45,49 @@ namespace ChessNS
         }
     }
 
-    MoveResult Board::move(Position origin, Position destination, bool checkVictory)
+    Movement Board::move(Position origin, Position destination, bool checkVictory)
     {
         if (_ended)
-            return MoveResult::invalid;
+            return Movement::invalid();
 
         if (origin == destination)
-            return MoveResult::invalid;
+            return Movement::invalid();
 
         if (!destination.isValid())
-            return MoveResult::invalid;
+            return Movement::invalid();
 
         auto       back          = *this;
-        auto       result        = back.move(back.at(origin), back.at(destination), true);
-        const auto currentColor  = back.at(destination).figure.getColor();
-        const auto opponentColor = currentColor == Color::white ? Color::black : Color::white;
+        const auto currentColor  = back.at(origin).figure.getColor();
+        const auto opponentColor = ChessTypes::getOpponent(currentColor);
+        auto       result        = back.at(origin).figure.move(destination, &back, true);
 
-        if (result == MoveResult::invalid)
-            return MoveResult::invalid;
+        if (!result.valid())
+            return Movement::invalid();
 
         if (back.isCheck(currentColor))
-            return MoveResult::invalid;
-
-        if (back.isCheck(opponentColor))
-            result = MoveResult::check;
+            return Movement::invalid();
 
         if (checkVictory)
         {
             const auto vic = back.checkVictory(opponentColor);
             if (vic == GameResult::victoryBlack || vic == GameResult::victoryWhite)
-                result = MoveResult::checkmate;
+                result.addFlag(EventType::checkmate);
         }
 
-        *this = back;
-        _movements.emplace_back(destination, origin, at(destination).figure.getType(), result, _currentColorTurn, _currentMove / 2 + 1);
+        if (!back._ended && back.isCheck(opponentColor))
+            result.addFlag(EventType::check);
+
+        *this             = back;
+        result.round()    = _currentMove / 2 + 1;
+        result.origin()   = origin;
         _currentColorTurn = opponentColor;
+
         ++_currentMove;
+        _movements.emplace_back(result);
         return result;
     }
 
-    MoveResult Board::allowed(Position origin, Position destination, bool checkVictory) const
+    Movement Board::allowed(Position origin, Position destination, bool checkVictory) const
     {
         auto back = *this;
         return back.move(origin, destination, checkVictory);
@@ -103,23 +103,23 @@ namespace ChessNS
         return Matrix::at(static_cast<size_type>(row), static_cast<size_type>(column));
     }
 
-    MoveResult Board::allowed(Position origin, Position destination) const
+    Movement Board::allowed(Position origin, Position destination) const
     {
         return allowed(origin, destination, true);
     }
 
-    MoveResult Board::move(Position origin, Position destination)
+    Movement Board::move(Position origin, Position destination)
     {
         if (at(origin).figure.getColor() != _currentColorTurn)
-            return MoveResult::invalid;
+            return Movement::invalid();
 
         return move(origin, destination, true);
     }
 
-    MoveResult Board::allowed(Movement movement) const
+    Movement Board::allowed(Movement movement) const
     {
         auto back = *this;
-        return back.move(movement);
+        return back.move(std::move(movement));
     }
 
     bool Board::changeFigureType(const Position& position, FigureType figure)
@@ -131,46 +131,50 @@ namespace ChessNS
         return true;
     }
 
-    MoveResult Board::move(Movement movement)
+    Movement Board::move(Movement movement)
     {
-        if (movement.origin.isValid())
-            return move(movement.origin, movement.destination);
+        if (movement.origin().isValid())
+            return move(movement.origin(), movement.destination());
 
         // estimate origin
-        const auto fields = getAllOccupiedFields(movement.byColor);
-        auto       result = MoveResult::invalid;
+        const auto fields = getAllOccupiedFields(movement.color());
+        auto       result = Movement::invalid();
 
         for (auto* f : fields)
         {
-            if (f->figure.getType() != movement.type)
+            if (f->figure.getType() != movement.figureType())
                 continue;
 
-            if (move(*f, at(movement.destination), false) != MoveResult::invalid)
+            if (f->figure.move(movement.destination(), this, false).valid())
             {
-                const auto rc = movement.origin.getCord();
+                const auto rc = movement.origin().getCord();
                 if ((rc.first == -1 && rc.second == -1)
                     || (rc.first != -1 && f->position.getCord().first == rc.first)
                     || (rc.second != -1 && f->position.getCord().second == rc.second))
                 {
-                    result = move(f->position, movement.destination);
+                    result = move(f->position, movement.destination());
                     break;
                 }
             }
         }
 
-        if (movement.promotedTo != FigureType::none)
+        if (movement.promotedTo() != FigureType::none)
         {
-            changeFigureType(movement.destination, movement.promotedTo);
+            changeFigureType(movement.destination(), movement.promotedTo());
 
-            const auto opponentColor = movement.byColor == Color::white ? Color::black : Color::white;
-            if (isCheck(opponentColor))
-                result = MoveResult::check;
+            result.removeFlag(EventType::checkmate);
+            result.removeFlag(EventType::check);
 
-            const auto vic = checkVictory(opponentColor);
+            const auto opponentColor = ChessTypes::getOpponent(movement.color());
+            const auto vic           = checkVictory(opponentColor);
+
             if (vic == GameResult::victoryBlack || vic == GameResult::victoryWhite)
-                result = MoveResult::checkmate;
+                result.addFlag(EventType::checkmate);
 
-            _movements.back().result = result;
+            if (!_ended && isCheck(opponentColor))
+                result.addFlag(EventType::check);
+
+            _movements.back() = result;
         }
 
         return result;
@@ -181,7 +185,7 @@ namespace ChessNS
         auto* kingField = getFigure(color, FigureType::king);
         if (kingField == nullptr)
             return false;
-        return isFieldUnderAttack(*kingField, color == Color::white ? Color::black : Color::white);
+        return isFieldUnderAttack(*kingField, ChessTypes::getOpponent(color));
     }
 
     GameResult Board::checkVictory()
@@ -225,9 +229,9 @@ namespace ChessNS
 
         for (auto& field : *this)
         {
-            const auto res = allowed(origin, field.position, false);
-            if (MoveResult::invalid != res)
-                result.emplace_back(origin, field.position, at(origin).figure.getType(), res, at(origin).figure.getColor());
+            auto res = allowed(origin, field.position, false);
+            if (res.valid())
+                result.emplace_back(res);
         }
 
         return result;
@@ -250,289 +254,9 @@ namespace ChessNS
         return _movements;
     }
 
-    MoveResult Board::move(Field& origin, Field& destination, bool execute)
+    unsigned Board::currentMove() const
     {
-        if (!destination.position.isValid())
-            return MoveResult::invalid;
-
-        switch (origin.figure.getType())
-        {
-            case FigureType::king: return kingMove(origin, destination, execute);
-            case FigureType::queen: return queenMove(origin, destination, execute);
-            case FigureType::rook: return rookMove(origin, destination, execute);
-            case FigureType::knight: return knightMove(origin, destination, execute);
-            case FigureType::bishop: return bishopMove(origin, destination, execute);
-            case FigureType::pawn: return pawnMove(origin, destination, execute);
-            case FigureType::none: return MoveResult::invalid;
-        }
-
-        return MoveResult::invalid;
-    }
-
-    MoveResult Board::pawnMove(Field& origin, Field& destination, bool execute)
-    {
-        auto dist = destination.position - origin.position;
-
-        if (origin.figure.getColor() == Color::black)
-            dist.negate();
-
-        // forward Move
-        if (dist == Position(1, 0) && destination.empty)
-        {
-            const auto res =
-                origin.figure.getColor() == Color::white && destination.position.row == BoardRow::r8 ||
-                origin.figure.getColor() == Color::black && destination.position.row == BoardRow::r1
-                    ? MoveResult::promotion
-                    : MoveResult::valid;
-
-            if (execute) moveFigure(origin, destination);
-            return res;
-        }
-
-        if (dist == Position(2, 0) && destination.empty && origin.figure.lastMoved() == 0)
-        {
-            if (execute) moveFigure(origin, destination);
-            return MoveResult::valid;
-        }
-
-        // Capture Move
-        if (dist == Position(1, 1) || dist == Position(1, -1))
-        {
-            // normal capture
-            if (!destination.empty && destination.figure.isOpponent(origin.figure))
-            {
-                const auto res =
-                    origin.figure.getColor() == Color::white && destination.position.row == BoardRow::r8 ||
-                    origin.figure.getColor() == Color::black && destination.position.row == BoardRow::r1
-                    ? MoveResult::promotion
-                    : MoveResult::capture;
-
-                if (execute) moveFigure(origin, destination);
-                return res;
-            }
-
-            // en passant 
-            auto posShift     = destination.position;
-            auto captureColor = Color::white;
-            auto originRow    = BoardRow::r4;
-            if (origin.figure.getColor() == Color::white)
-            {
-                posShift += Position(-1, 0);
-                captureColor = Color::black;
-                originRow    = BoardRow::r5;
-            }
-            else
-            {
-                posShift += Position(1, 0);
-            }
-
-            auto& f = at(posShift);
-            if (destination.empty &&
-                origin.position.row == originRow &&
-                f.figure.getColor() == captureColor &&
-                f.figure.getType() == FigureType::pawn &&
-                f.figure.lastMoved() == _currentMove - 1 &&
-                f.figure.nbrOfMovements() == 1
-            )
-            {
-                if (execute)
-                {
-                    moveFigure(origin, destination);
-                    f.figure = Figure();
-                    f.empty  = true;
-                }
-                return MoveResult::capture;
-            }
-        }
-
-        return MoveResult::invalid;
-    }
-
-    MoveResult Board::kingMove(Field& origin, Field& destination, bool execute)
-    {
-        const auto dist        = destination.position - origin.position;
-        const auto coordinates = dist.getCord();
-
-        // castling
-        if (std::abs(coordinates.second) == 2 && std::abs(coordinates.first) == 0 && origin.figure.nbrOfMovements() == 0)
-        {
-            const auto row      = origin.position.row;
-            const auto oppColor = origin.figure.getColor() == Color::white ? Color::black : Color::white;
-
-            if (coordinates.second > 0) // increasing
-            {
-                if (!at(row, BoardColumn::cF).empty ||
-                    !at(row, BoardColumn::cG).empty ||
-                    at(row, BoardColumn::cH).figure.nbrOfMovements() > 0 || // implies that the figure is a rook and of same color, but only on standard boards
-                    at(row, BoardColumn::cH).figure.getType() != FigureType::rook ||
-                    at(row, BoardColumn::cH).figure.getColor() != origin.figure.getColor() ||
-                    isFieldUnderAttack(at(row, BoardColumn::cE), oppColor) ||
-                    isFieldUnderAttack(at(row, BoardColumn::cF), oppColor) ||
-                    isFieldUnderAttack(at(row, BoardColumn::cG), oppColor)
-                )
-                    return MoveResult::invalid;
-
-                // Castling is valid
-                if (execute)
-                {
-                    moveFigure(origin, destination);
-                    moveFigure(at(row, BoardColumn::cH), at(row, BoardColumn::cF));
-                }
-                return MoveResult::valid;
-            }
-
-            // else decreasing
-            if (!at(row, BoardColumn::cD).empty ||
-                !at(row, BoardColumn::cC).empty ||
-                !at(row, BoardColumn::cB).empty ||
-                at(row, BoardColumn::cA).figure.nbrOfMovements() > 0 || // implies that the figure is a rook and of same color, but only on standard boards
-                at(row, BoardColumn::cA).figure.getType() != FigureType::rook ||
-                at(row, BoardColumn::cA).figure.getColor() != origin.figure.getColor() ||
-                isFieldUnderAttack(at(row, BoardColumn::cF), oppColor) ||
-                isFieldUnderAttack(at(row, BoardColumn::cD), oppColor) ||
-                isFieldUnderAttack(at(row, BoardColumn::cC), oppColor)
-            )
-                return MoveResult::invalid;
-
-            // Castling is valid
-            if (execute)
-            {
-                moveFigure(origin, destination);
-                moveFigure(at(row, BoardColumn::cA), at(row, BoardColumn::cD));
-            }
-            return MoveResult::valid;
-        }
-
-        if (std::abs(coordinates.first) > 1 || std::abs(coordinates.second) > 1)
-            return MoveResult::invalid;
-
-        if (destination.empty)
-        {
-            if (execute) moveFigure(origin, destination);
-            return MoveResult::valid;
-        }
-
-        if (destination.figure.isOpponent(origin.figure))
-        {
-            if (execute) moveFigure(origin, destination);
-            return MoveResult::capture;
-        }
-
-        return MoveResult::invalid;
-    }
-
-    MoveResult Board::queenMove(Field& origin, Field& destination, bool execute)
-    {
-        const auto res = rookMove(origin, destination, execute);
-        if (res == MoveResult::invalid)
-            return bishopMove(origin, destination, execute);
-        return res;
-    }
-
-    MoveResult Board::bishopMove(Field& origin, Field& destination, bool execute)
-    {
-        const auto dist        = destination.position - origin.position;
-        const auto coordinates = dist.getCord();
-
-        // only diagonal
-        if (std::abs(coordinates.first) != std::abs(coordinates.second))
-            return MoveResult::invalid;
-
-        const auto rSign = coordinates.first > 0 ? 1 : -1;
-        const auto cSign = coordinates.second > 0 ? 1 : -1;
-
-        for (int i = 1; i < std::abs(coordinates.first); i++)
-        {
-            const auto pos = origin.position + Position(i * rSign, i * cSign);
-            if (!at(pos).empty)
-                return MoveResult::invalid;
-        }
-
-        if (destination.empty)
-        {
-            if (execute) moveFigure(origin, destination);
-            return MoveResult::valid;
-        }
-
-        if (destination.figure.isOpponent(origin.figure))
-        {
-            if (execute) moveFigure(origin, destination);
-            return MoveResult::capture;
-        }
-
-        return MoveResult::invalid;
-    }
-
-    MoveResult Board::knightMove(Field& origin, Field& destination, bool execute)
-    {
-        const auto dist        = destination.position - origin.position;
-        const auto coordinates = dist.getCord();
-
-        if ((std::abs(coordinates.first) != 2 || std::abs(coordinates.second) != 1) &&
-            (std::abs(coordinates.first) != 1 || std::abs(coordinates.second) != 2))
-            return MoveResult::invalid;
-
-        if (destination.empty)
-        {
-            if (execute) moveFigure(origin, destination);
-            return MoveResult::valid;
-        }
-
-        if (destination.figure.isOpponent(origin.figure))
-        {
-            if (execute) moveFigure(origin, destination);
-            return MoveResult::capture;
-        }
-
-        return MoveResult::invalid;
-    }
-
-    MoveResult Board::rookMove(Field& origin, Field& destination, bool execute)
-    {
-        const auto dist        = destination.position - origin.position;
-        const auto coordinates = dist.getCord();
-
-        // diagonal is not allowed
-        if (std::abs(coordinates.first) > 0 && std::abs(coordinates.second) > 0)
-            return MoveResult::invalid;
-
-        // Check if everything between is empty
-        // Move in y direction
-        if (std::abs(coordinates.first) > 0)
-        {
-            const auto sign = coordinates.first > 0 ? 1 : -1;
-            for (int i = 1; i < std::abs(coordinates.first); i++)
-            {
-                const auto pos = origin.position + Position(i * sign, 0);
-                if (!at(pos).empty)
-                    return MoveResult::invalid;
-            }
-        }
-            // In x direction
-        else
-        {
-            const auto sign = coordinates.second > 0 ? 1 : -1;
-            for (int i = 1; i < std::abs(coordinates.second); i++)
-            {
-                const auto pos = origin.position + Position(0, i * sign);
-                if (!at(pos).empty)
-                    return MoveResult::invalid;
-            }
-        }
-
-        if (destination.empty)
-        {
-            if (execute) moveFigure(origin, destination);
-            return MoveResult::valid;
-        }
-
-        if (destination.figure.isOpponent(origin.figure))
-        {
-            if (execute) moveFigure(origin, destination);
-            return MoveResult::capture;
-        }
-
-        return MoveResult::invalid;
+        return _currentMove;
     }
 
     bool Board::isFieldUnderAttack(Field& field, Color byColor)
@@ -541,23 +265,12 @@ namespace ChessNS
 
         for (auto* f : fields)
         {
-            const auto res = move(*f, field, false);
-            if (res == MoveResult::valid || res == MoveResult::capture)
-                return true;
-            if (res != MoveResult::invalid)
+            auto res = f->figure.move(field.position, this, false);
+            if (res.moveResult() == MoveResult::valid)
                 return true;
         }
 
         return false;
-    }
-
-    void Board::moveFigure(Field& origin, Field& destination) const
-    {
-        origin.figure.move(destination.position, _currentMove);
-        destination.figure = origin.figure;
-        destination.empty  = false;
-        origin.empty       = true;
-        origin.figure      = Figure();
     }
 
     void Board::createFigure(Field& field, FigureType figure, Color color)

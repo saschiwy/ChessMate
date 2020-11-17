@@ -8,9 +8,11 @@ namespace ChessNS
 {
     struct Field
     {
-        bool     empty;
-        Position position;
-        Figure   figure;
+        bool     empty{true};
+        Position position{};
+        Figure   figure{};
+
+        Field() = default;
     };
 
     #ifdef BUILD_TESTS
@@ -39,15 +41,15 @@ namespace ChessNS
 
         Field& at(BoardRow row, BoardColumn column);
 
-        MoveResult allowed(Position origin, Position destination) const;
+        Movement allowed(Position origin, Position destination) const;
 
-        MoveResult move(Position origin, Position destination);
+        Movement allowed(Movement movement) const;
 
-        MoveResult allowed(Movement movement) const;
+        Movement move(Position origin, Position destination);
+
+        Movement move(Movement movement);
 
         bool changeFigureType(const Position& position, FigureType figure);
-
-        MoveResult move(Movement movement);
 
         bool isCheck(Color color);
 
@@ -63,30 +65,17 @@ namespace ChessNS
 
         std::vector<Movement> getAllMadeMoves() const;
 
-    private:
-        explicit Board(BoardStartType boardStart);
-
-        MoveResult move(Position origin, Position destination, bool checkVictory);
-
-        MoveResult allowed(Position origin, Position destination, bool checkVictory) const;
-
-        MoveResult move(Field& origin, Field& destination, bool execute);
-
-        MoveResult pawnMove(Field& origin, Field& destination, bool execute);
-
-        MoveResult kingMove(Field& origin, Field& destination, bool execute);
-
-        MoveResult queenMove(Field& origin, Field& destination, bool execute);
-
-        MoveResult bishopMove(Field& origin, Field& destination, bool execute);
-
-        MoveResult knightMove(Field& origin, Field& destination, bool execute);
-
-        MoveResult rookMove(Field& origin, Field& destination, bool execute);
+        unsigned currentMove() const;
 
         bool isFieldUnderAttack(Field& field, Color byColor);
 
-        void moveFigure(Field& origin, Field& destination) const;
+    private:
+
+        explicit Board(BoardStartType boardStart);
+
+        Movement move(Position origin, Position destination, bool checkVictory);
+
+        Movement allowed(Position origin, Position destination, bool checkVictory) const;
 
         static void createFigure(Field& field, FigureType figure, Color color);
 

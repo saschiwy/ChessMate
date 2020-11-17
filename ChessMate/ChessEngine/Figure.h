@@ -5,40 +5,95 @@
 
 namespace ChessNS
 {
+    class Board;
+
     class Figure
     {
     public:
-        Figure();
+        friend Board;
 
-        explicit Figure(FigureType type, Color color, Position position);
+        virtual ~Figure() = default;
 
-        FigureType getType() const;
+        Figure() = default;
 
-        void setType(FigureType type);
+        Figure(FigureType type, Color color, Position position);
 
-        Color getColor() const;
+        FigureType getType() const noexcept;
 
-        Position getCurrentPosition() const;
+        void setType(FigureType type) noexcept;
 
-        Position getPreviousPosition() const;
+        Color getColor() const noexcept;
 
-        Position getInitialPosition() const;
+        Position getCurrentPosition() const noexcept;
 
-        bool isOpponent(const Figure& other) const;
+        Position getPreviousPosition() const noexcept;
 
-        void move(const Position& newPosition, unsigned moveCounter);
+        Position getInitialPosition() const noexcept;
 
-        unsigned lastMoved() const;
+        bool isOpponent(const Figure& other) const noexcept;
 
-        unsigned nbrOfMovements() const;
+        unsigned lastMoved() const noexcept;
+
+        unsigned nbrOfMovements() const noexcept;
+
+        bool canJump() const noexcept;
+
+        virtual Movement move(const Position& destination, Board* board, bool execute = false);
 
     protected:
-        unsigned   _lastMoved;
-        unsigned   _nbrOfMovements;
-        Position   _previousPosition;
-        Position   _currentPosition;
-        Position   _startPosition;
-        Color      _color;
-        FigureType _type;
+
+        Movement moveInt(const Position& destination) const;
+
+        void executeMove(const Position& destination, Board* board);
+
+        bool isPathBlocked(const Position& position, Board* board) const;
+
+        unsigned   _lastMoved        = 0;
+        unsigned   _nbrOfMovements   = 0;
+        Position   _previousPosition = Position(-1, -1);
+        Position   _currentPosition  = Position(-1, -1);
+        Position   _startPosition    = Position(-1, -1);
+        Color      _color            = Color::none;
+        FigureType _type             = FigureType::none;
+
+    public:
+    };
+
+    class Pawn : public Figure
+    {
+    public:
+        Movement move(const Position& destination, Board* board, bool execute) override;
+    };
+
+    class King : public Figure
+    {
+    public:
+        Movement move(const Position& destination, Board* board, bool execute) override;
+    };
+
+    class Knight : public Figure
+    {
+    public:
+        Movement move(const Position& destination, Board* board, bool execute) override;
+    };
+
+    class Queen : public Figure
+    {
+    public:
+        Movement move(const Position& destination, Board* board, bool execute) override;
+    };
+
+    class Bishop : public Figure
+    {
+    public:
+        Movement move(const Position& destination, Board* board, bool execute) override;
+    };
+
+    class Rook : public Figure
+    {
+    public:
+        friend King;
+
+        Movement move(const Position& destination, Board* board, bool execute) override;
     };
 }

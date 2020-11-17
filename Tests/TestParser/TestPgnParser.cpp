@@ -20,21 +20,21 @@ namespace ChessNS
         ASSERT_EQ(GameResult::victoryBlack, game.result);
         ASSERT_EQ(4, game.movements.size());
 
-        ASSERT_EQ(Position(BoardRow::r3, BoardColumn::cF), game.movements[0].destination);
-        ASSERT_EQ(FigureType::pawn, game.movements[0].type);
-        ASSERT_EQ(Color::white, game.movements[0].byColor);
+        ASSERT_EQ(Position(BoardRow::r3, BoardColumn::cF), game.movements[0].destination());
+        ASSERT_EQ(FigureType::pawn, game.movements[0].figureType());
+        ASSERT_EQ(Color::white, game.movements[0].color());
 
-        ASSERT_EQ(Position(BoardRow::r5, BoardColumn::cE), game.movements[1].destination);
-        ASSERT_EQ(FigureType::pawn, game.movements[1].type);
-        ASSERT_EQ(Color::black, game.movements[1].byColor);
+        ASSERT_EQ(Position(BoardRow::r5, BoardColumn::cE), game.movements[1].destination());
+        ASSERT_EQ(FigureType::pawn, game.movements[1].figureType());
+        ASSERT_EQ(Color::black, game.movements[1].color());
 
-        ASSERT_EQ(Position(BoardRow::r4, BoardColumn::cG), game.movements[2].destination);
-        ASSERT_EQ(FigureType::pawn, game.movements[2].type);
-        ASSERT_EQ(Color::white, game.movements[2].byColor);
+        ASSERT_EQ(Position(BoardRow::r4, BoardColumn::cG), game.movements[2].destination());
+        ASSERT_EQ(FigureType::pawn, game.movements[2].figureType());
+        ASSERT_EQ(Color::white, game.movements[2].color());
 
-        ASSERT_EQ(Position(BoardRow::r4, BoardColumn::cH), game.movements[3].destination);
-        ASSERT_EQ(FigureType::queen, game.movements[3].type);
-        ASSERT_EQ(Color::black, game.movements[3].byColor);
+        ASSERT_EQ(Position(BoardRow::r4, BoardColumn::cH), game.movements[3].destination());
+        ASSERT_EQ(FigureType::queen, game.movements[3].figureType());
+        ASSERT_EQ(Color::black, game.movements[3].color());
     }
 
     TEST_F(TestPgnParser, parseSingleGame_incompleteGame_GameWithNoneResult)
@@ -45,34 +45,34 @@ namespace ChessNS
         ASSERT_EQ(GameResult::none, game.result);
         ASSERT_EQ(4, game.movements.size());
 
-        ASSERT_EQ(Position(BoardRow::r3, BoardColumn::cF), game.movements[0].destination);
-        ASSERT_EQ(FigureType::pawn, game.movements[0].type);
-        ASSERT_EQ(Color::white, game.movements[0].byColor);
+        ASSERT_EQ(Position(BoardRow::r3, BoardColumn::cF), game.movements[0].destination());
+        ASSERT_EQ(FigureType::pawn, game.movements[0].figureType());
+        ASSERT_EQ(Color::white, game.movements[0].color());
 
-        ASSERT_EQ(Position(BoardRow::r5, BoardColumn::cE), game.movements[1].destination);
-        ASSERT_EQ(FigureType::pawn, game.movements[1].type);
-        ASSERT_EQ(Color::black, game.movements[1].byColor);
+        ASSERT_EQ(Position(BoardRow::r5, BoardColumn::cE), game.movements[1].destination());
+        ASSERT_EQ(FigureType::pawn, game.movements[1].figureType());
+        ASSERT_EQ(Color::black, game.movements[1].color());
 
-        ASSERT_EQ(Position(BoardRow::r4, BoardColumn::cG), game.movements[2].destination);
-        ASSERT_EQ(FigureType::pawn, game.movements[2].type);
-        ASSERT_EQ(Color::white, game.movements[2].byColor);
+        ASSERT_EQ(Position(BoardRow::r4, BoardColumn::cG), game.movements[2].destination());
+        ASSERT_EQ(FigureType::pawn, game.movements[2].figureType());
+        ASSERT_EQ(Color::white, game.movements[2].color());
 
-        ASSERT_EQ(Position(BoardRow::r4, BoardColumn::cH), game.movements[3].destination);
-        ASSERT_EQ(FigureType::queen, game.movements[3].type);
-        ASSERT_EQ(Color::black, game.movements[3].byColor);
+        ASSERT_EQ(Position(BoardRow::r4, BoardColumn::cH), game.movements[3].destination());
+        ASSERT_EQ(FigureType::queen, game.movements[3].figureType());
+        ASSERT_EQ(Color::black, game.movements[3].color());
     }
 
     TEST_F(TestPgnParser, parseSingleGame_completeGamePlusBoard_BoardAndResultAreEqual)
     {
-        Board      board;
-        PgnParser  parser;
-        const auto game = parser.parseSingleGame("./pgn_examples/black_checkmate.pgn");
+        Board     board;
+        PgnParser parser;
+        auto      game = parser.parseSingleGame("./pgn_examples/black_checkmate.pgn");
 
         // Create expected Results
         const auto expectedMovements = 105;
         const auto expectedResult    = GameResult::victoryWhite;
 
-        std::vector<std::vector<Figure>> expectedFigures(8, std::vector<Figure>(8));
+        std::vector<std::vector<Figure>> expectedFigures(8, std::vector<Figure>(8, Figure(FigureType::none, Color::none, Position())));
         expectedFigures[3][7] = Figure(FigureType::pawn, Color::white, Position(3, 7));
         expectedFigures[2][0] = Figure(FigureType::queen, Color::white, Position(2, 0));
         expectedFigures[2][3] = Figure(FigureType::queen, Color::white, Position(2, 3));
@@ -87,10 +87,17 @@ namespace ChessNS
 
         for (size_t i = 0; i < expectedMovements; i++)
         {
-            const auto res = board.move(game.movements.at(i));
-            if (game.movements.at(i).result != res)
-                FAIL() << "MoveResult {" << static_cast<int>(res) << "} and expected MoveResult {" << static_cast<int>(game.movements.at(i).result) <<
-                    "} differ at movement " << i;
+            auto res = board.move(game.movements.at(i));
+            if (game.movements.at(i).moveResult() != res.moveResult())
+                FAIL() << "MoveResult {" << static_cast<int>(res.moveResult()) << "} and expected MoveResult {" << static_cast<int>(game.movements.at(i).
+                    moveResult()) << "} differ at movement " << i;
+
+            for (size_t f = 0; f < 5; f++)
+            {
+                const auto flag = game.movements.at(i).hasFlag(static_cast<EventType>(f));
+                if (flag != res.hasFlag(static_cast<EventType>(f)))
+                    FAIL() << "Flags differ at movement " << i;
+            }
         }
 
         for (int row = 0; row < 8; row++)
@@ -105,18 +112,18 @@ namespace ChessNS
 
         for (size_t i = 0; i < expectedMovements; i++)
         {
-            ASSERT_EQ(game.movements.at(i).byColor, madeMoves.at(i).byColor);
-            ASSERT_EQ(game.movements.at(i).destination, madeMoves.at(i).destination);
-            ASSERT_EQ(game.movements.at(i).type, madeMoves.at(i).type);
-            ASSERT_EQ(game.movements.at(i).result, madeMoves.at(i).result);
+            ASSERT_EQ(game.movements.at(i).color(), madeMoves.at(i).color());
+            ASSERT_EQ(game.movements.at(i).destination(), madeMoves.at(i).destination());
+            ASSERT_EQ(game.movements.at(i).figureType(), madeMoves.at(i).figureType());
+            ASSERT_EQ(game.movements.at(i).moveResult(), madeMoves.at(i).moveResult());
         }
     }
 
     TEST_F(TestPgnParser, parseSingleGame_completeGamePlusBoardMultipleEventsAtOnce_BoardAndResultAreEqual)
     {
-        Board      board;
-        PgnParser  parser;
-        const auto game = parser.parseSingleGame("./pgn_examples/promotion_with_checkmate_and_enpassant.pgn");
+        Board     board;
+        PgnParser parser;
+        auto      game = parser.parseSingleGame("./pgn_examples/promotion_with_checkmate_and_enpassant.pgn");
 
         // Create expected Results
         const auto expectedMovements = 41;
@@ -135,10 +142,17 @@ namespace ChessNS
 
         for (size_t i = 0; i < expectedMovements; i++)
         {
-            const auto res = board.move(game.movements.at(i));
-            if (game.movements.at(i).result != res)
-                FAIL() << "MoveResult {" << static_cast<int>(res) << "} and expected MoveResult {" << static_cast<int>(game.movements.at(i).result) <<
-                    "} differ at movement " << i;
+            auto res = board.move(game.movements.at(i));
+            if (game.movements.at(i).moveResult() != res.moveResult())
+                FAIL() << "MoveResult {" << static_cast<int>(res.moveResult()) << "} and expected MoveResult {" << static_cast<int>(game.movements.at(i).
+                    moveResult()) << "} differ at movement " << i;
+
+            for (size_t f = 0; f < 5; f++)
+            {
+                const auto flag = game.movements.at(i).hasFlag(static_cast<EventType>(f));
+                if (flag != res.hasFlag(static_cast<EventType>(f)))
+                    FAIL() << "Flags differ at movement " << i;
+            }
         }
 
         for (auto&& expectedFigure : expectedFigures)
@@ -152,10 +166,10 @@ namespace ChessNS
 
         for (size_t i = 0; i < expectedMovements; i++)
         {
-            ASSERT_EQ(game.movements.at(i).byColor, madeMoves.at(i).byColor);
-            ASSERT_EQ(game.movements.at(i).destination, madeMoves.at(i).destination);
-            ASSERT_EQ(game.movements.at(i).type, madeMoves.at(i).type);
-            ASSERT_EQ(game.movements.at(i).result, madeMoves.at(i).result);
+            ASSERT_EQ(game.movements.at(i).color(), madeMoves.at(i).color());
+            ASSERT_EQ(game.movements.at(i).destination(), madeMoves.at(i).destination());
+            ASSERT_EQ(game.movements.at(i).figureType(), madeMoves.at(i).figureType());
+            ASSERT_EQ(game.movements.at(i).moveResult(), madeMoves.at(i).moveResult());
         }
     }
 }
