@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -9,13 +10,21 @@ namespace ChessNS
 
     enum class FigureType { none, king, queen, rook, knight, bishop, pawn };
 
+    std::string toString(FigureType e);
+
     enum class MoveResult { invalid, valid };
 
     enum class EventType { capture, promotion, check, checkmate, castling };
 
+    std::string toString(EventType e);
+
     enum class BoardColumn { cA, cB, cC, cD, cE, cF, cG, cH };
 
+    std::string toString(BoardColumn e);
+
     enum class BoardRow { r1, r2, r3, r4, r5, r6, r7, r8 };
+
+    std::string toString(BoardRow e);
 
     enum class GameResult { none, victoryWhite, victoryBlack, draw, resignWhite, resignBlack };
 
@@ -54,6 +63,8 @@ namespace ChessNS
         friend Position operator-(Position lhs, const Position& rhs);
 
         void negate();
+
+        std::string toString() const;
 
         BoardRow    row{};
         BoardColumn column{};

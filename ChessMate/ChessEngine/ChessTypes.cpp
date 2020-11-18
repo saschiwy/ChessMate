@@ -2,6 +2,66 @@
 
 namespace ChessNS
 {
+    std::string toString(FigureType e)
+    {
+        switch (e)
+        {
+            case FigureType::none: return "none";
+            case FigureType::king: return "king";
+            case FigureType::queen: return "queen";
+            case FigureType::rook: return "rook";
+            case FigureType::knight: return "knight";
+            case FigureType::bishop: return "bishop";
+            case FigureType::pawn: return "pawn";
+            default: return "undefined";
+        }
+    }
+
+    std::string toString(EventType e)
+    {
+        switch (e)
+        {
+            case EventType::capture: return "capture";
+            case EventType::promotion: return "promotion";
+            case EventType::check: return "check";
+            case EventType::checkmate: return "checkmate";
+            case EventType::castling: return "castling";
+            default: return "undefined";
+        }
+    }
+
+    std::string toString(BoardColumn e)
+    {
+        switch (e)
+        {
+            case BoardColumn::cA: return "a";
+            case BoardColumn::cB: return "b";
+            case BoardColumn::cC: return "c";
+            case BoardColumn::cD: return "d";
+            case BoardColumn::cE: return "e";
+            case BoardColumn::cF: return "f";
+            case BoardColumn::cG: return "g";
+            case BoardColumn::cH: return "h";
+            default: return "undefined";
+        }
+    }
+
+    std::string toString(BoardRow e)
+    {
+        switch (e)
+        {
+            case BoardRow::r1: return "1";
+            case BoardRow::r2: return "2";
+            case BoardRow::r3: return "3";
+            case BoardRow::r4: return "4";
+            case BoardRow::r5: return "5";
+            case BoardRow::r6: return "6";
+            case BoardRow::r7: return "7";
+            case BoardRow::r8: return "8";
+            default: return "undefined";
+        }
+    }
+
     Position::Position()
     {
         set(-1, -1);
@@ -71,6 +131,11 @@ namespace ChessNS
     {
         _row    = -_row;
         _column = -_column;
+    }
+
+    std::string Position::toString() const
+    {
+        return ChessNS::toString(column) + ChessNS::toString(row);
     }
 
     Position operator+(const Position lhs, const Position& rhs)
