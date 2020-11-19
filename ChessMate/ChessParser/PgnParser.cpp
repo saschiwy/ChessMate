@@ -1,3 +1,29 @@
+/*!
+* \brief:  Implements the pgn parser class
+*
+* The MIT License (MIT)
+*
+* Copyright (c) 2020 Sascha Schiwy. All rights reserved.
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+ */
+
 #include "PgnParser.h"
 #include "BasicUtils/StringHelper.h"
 #include <fstream>
@@ -101,7 +127,7 @@ namespace ChessNS
         {
             movement.figureType()  = FigureType::king;
             movement.destination() = color == Color::white ? Position(BoardRow::r1, BoardColumn::cG) : Position(BoardRow::r8, BoardColumn::cG);
-            movement.addFlag(EventType::castling);
+            movement.addFlag(EventFlag::castling);
             if (move.length() == 3)
                 return movement;
 
@@ -112,7 +138,7 @@ namespace ChessNS
         {
             movement.figureType()  = FigureType::king;
             movement.destination() = color == Color::white ? Position(BoardRow::r1, BoardColumn::cC) : Position(BoardRow::r8, BoardColumn::cC);
-            movement.addFlag(EventType::castling);
+            movement.addFlag(EventFlag::castling);
             if (move.length() == 5)
                 return movement;
             move = move.substr(5);
@@ -133,32 +159,32 @@ namespace ChessNS
         // capture
         const auto x = move.find('x');
         if (x != std::string::npos)
-            movement.addFlag(EventType::capture);
+            movement.addFlag(EventFlag::capture);
 
         // check is not interesting for movements here
         if (move.back() == '+')
         {
-            movement.addFlag(EventType::check);
+            movement.addFlag(EventFlag::check);
             move = move.substr(0, move.length() - 1);
         }
 
         // Checkmate is also
         if (move.back() == '#')
         {
-            movement.addFlag(EventType::checkmate);
+            movement.addFlag(EventFlag::checkmate);
             move = move.substr(0, move.length() - 1);
         }
 
         // promotion
         if (movement.figureType() == FigureType::pawn && _figureTypes.find(move.back()) != _figureTypes.end())
         {
-            movement.addFlag(EventType::promotion);
+            movement.addFlag(EventFlag::promotion);
             movement.promotedTo() = _figureTypes.at(move.back());
             move                  = move.substr(0, move.length() - 2);
         }
 
         // Last two both letters are the destination now
-        if (!movement.hasFlag(EventType::castling))
+        if (!movement.hasFlag(EventFlag::castling))
         {
             movement.destination().set(_rowsByLetter.at(move.at(move.length() - 1)),
                                        _columnsByLetter.at(move.at(move.length() - 2)));

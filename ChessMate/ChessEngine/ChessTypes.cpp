@@ -1,3 +1,29 @@
+/*!
+* \brief:  Implements the chess types
+*
+* The MIT License (MIT)
+*
+* Copyright (c) 2020 Sascha Schiwy. All rights reserved.
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+ */
+
 #include "ChessTypes.h"
 
 namespace ChessNS
@@ -17,15 +43,15 @@ namespace ChessNS
         }
     }
 
-    std::string toString(EventType e)
+    std::string toString(EventFlag e)
     {
         switch (e)
         {
-            case EventType::capture: return "capture";
-            case EventType::promotion: return "promotion";
-            case EventType::check: return "check";
-            case EventType::checkmate: return "checkmate";
-            case EventType::castling: return "castling";
+            case EventFlag::capture: return "capture";
+            case EventFlag::promotion: return "promotion";
+            case EventFlag::check: return "check";
+            case EventFlag::checkmate: return "checkmate";
+            case EventFlag::castling: return "castling";
             default: return "undefined";
         }
     }
@@ -150,7 +176,7 @@ namespace ChessNS
 
     Movement Movement::invalid() { return Movement(); }
 
-    bool Movement::valid() { return _result == MoveResult::valid && destination().isValid(); }
+    bool Movement::isValid() { return _result == MoveResult::valid && destination().isValid(); }
 
     Position& Movement::destination() { return _destination; }
 
@@ -160,9 +186,9 @@ namespace ChessNS
 
     MoveResult& Movement::moveResult() { return _result; }
 
-    bool Movement::hasFlag(EventType eventType) { return std::find(_events.begin(), _events.end(), eventType) != _events.end(); }
+    bool Movement::hasFlag(EventFlag eventFlag) { return std::find(_events.begin(), _events.end(), eventFlag) != _events.end(); }
 
-    void Movement::addFlag(EventType eventType) { if (!hasFlag(eventType)) _events.push_back(eventType); }
+    void Movement::addFlag(EventFlag eventFlag) { if (!hasFlag(eventFlag)) _events.push_back(eventFlag); }
 
     Color& Movement::color() { return _byColor; }
 
@@ -170,9 +196,9 @@ namespace ChessNS
 
     FigureType& Movement::promotedTo() { return _promotedTo; }
 
-    void Movement::removeFlag(EventType eventType)
+    void Movement::removeFlag(EventFlag eventFlag)
     {
-        const auto pos = std::find(_events.begin(), _events.end(), eventType);
+        const auto pos = std::find(_events.begin(), _events.end(), eventFlag);
         if (pos != _events.end())
             _events.erase(pos);
     }

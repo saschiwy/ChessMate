@@ -1,3 +1,29 @@
+/*!
+* \brief:  Implements the figure class
+*
+* The MIT License (MIT)
+*
+* Copyright (c) 2020 Sascha Schiwy. All rights reserved.
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+ */
+
 #include "Figure.h"
 #include "Board.h"
 
@@ -126,7 +152,7 @@ namespace ChessNS
             if (!board->at(destination).empty && board->at(destination).figure.isOpponent(*this))
             {
                 result.moveResult() = MoveResult::valid;
-                result.addFlag(EventType::capture);
+                result.addFlag(EventFlag::capture);
             }
             else
             {
@@ -154,9 +180,9 @@ namespace ChessNS
                 )
                 {
                     result.moveResult() = MoveResult::valid;
-                    result.addFlag(EventType::capture);
+                    result.addFlag(EventFlag::capture);
 
-                    if (execute && result.valid())
+                    if (execute && result.isValid())
                     {
                         f.figure = Figure();
                         f.empty  = true;
@@ -165,11 +191,11 @@ namespace ChessNS
             }
         }
 
-        if (result.valid() &&
+        if (result.isValid() &&
             (_color == Color::black && destination.row == BoardRow::r1 || _color == Color::white && destination.row == BoardRow::r8))
-            result.addFlag(EventType::promotion);
+            result.addFlag(EventFlag::promotion);
 
-        if (execute && result.valid())
+        if (execute && result.isValid())
             executeMove(destination, board);
         return result;
     }
@@ -197,7 +223,7 @@ namespace ChessNS
                     !board->isFieldUnderAttack(board->at(row, BoardColumn::cG), oppColor))
                 {
                     result.moveResult() = MoveResult::valid;
-                    result.addFlag(EventType::castling);
+                    result.addFlag(EventFlag::castling);
                     if (execute)
                     {
                         auto* k = reinterpret_cast<Rook*>(&(board->at(row, BoardColumn::cH).figure));
@@ -219,7 +245,7 @@ namespace ChessNS
                 !board->isFieldUnderAttack(board->at(row, BoardColumn::cC), oppColor))
             {
                 result.moveResult() = MoveResult::valid;
-                result.addFlag(EventType::castling);
+                result.addFlag(EventFlag::castling);
 
                 if (execute)
                 {
@@ -238,11 +264,11 @@ namespace ChessNS
             else if (board->at(destination).figure.isOpponent(*this))
             {
                 result.moveResult() = MoveResult::valid;
-                result.addFlag(EventType::capture);
+                result.addFlag(EventFlag::capture);
             }
         }
 
-        if (execute && result.valid())
+        if (execute && result.isValid())
             executeMove(destination, board);
 
         return result;
@@ -266,7 +292,7 @@ namespace ChessNS
         else if (board->at(destination).figure.isOpponent(*this))
         {
             result.moveResult() = MoveResult::valid;
-            result.addFlag(EventType::capture);
+            result.addFlag(EventFlag::capture);
         }
 
         if (execute)
@@ -278,7 +304,7 @@ namespace ChessNS
     Movement Queen::move(const Position& destination, Board* board, bool execute)
     {
         auto result = reinterpret_cast<Rook*>(this)->Rook::move(destination, board, execute);
-        if (result.valid())
+        if (result.isValid())
             return result;
         return reinterpret_cast<Bishop*>(this)->Bishop::move(destination, board, execute);
     }
@@ -304,10 +330,10 @@ namespace ChessNS
         else if (board->at(destination).figure.isOpponent(*this))
         {
             result.moveResult() = MoveResult::valid;
-            result.addFlag(EventType::capture);
+            result.addFlag(EventFlag::capture);
         }
 
-        if (execute && result.valid())
+        if (execute && result.isValid())
             executeMove(destination, board);
 
         return result;
@@ -334,10 +360,10 @@ namespace ChessNS
         else if (board->at(destination).figure.isOpponent(*this))
         {
             result.moveResult() = MoveResult::valid;
-            result.addFlag(EventType::capture);
+            result.addFlag(EventFlag::capture);
         }
 
-        if (execute && result.valid())
+        if (execute && result.isValid())
             executeMove(destination, board);
 
         return result;

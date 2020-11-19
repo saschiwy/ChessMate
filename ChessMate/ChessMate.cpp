@@ -1,4 +1,30 @@
-﻿#include "ChessMate.h"
+﻿/*!
+* \brief:  Implements the chess mate console based game
+*
+* The MIT License (MIT)
+*
+* Copyright (c) 2020 Sascha Schiwy. All rights reserved.
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+ */
+
+#include "ChessMate.h"
 
 int main()
 {
@@ -26,7 +52,7 @@ int main()
         while (movement.moveResult() == ChessNS::MoveResult::invalid);
         std::cout << printFlags(movement) << std::endl;
 
-        if (movement.hasFlag(ChessNS::EventType::promotion))
+        if (movement.hasFlag(ChessNS::EventFlag::promotion))
         {
             std::cout << "Pawn can be promoted, choose (Q, R, B, N): ";
             std::cin >> input;
@@ -41,7 +67,7 @@ int main()
         movement = black->move(movement);
         std::cout << movement.origin().toString() << "-" << movement.destination().toString() << " " << printFlags(movement) << std::endl;
 
-        if (movement.hasFlag(ChessNS::EventType::promotion))
+        if (movement.hasFlag(ChessNS::EventFlag::promotion))
             std::cout << "Promoted to: " << ChessNS::toString(movement.promotedTo()) << std::endl;
     }
 
@@ -93,7 +119,7 @@ std::string printFlags(ChessNS::Movement& movement)
     std::string result;
     for (size_t i = 0; i < 5; i++)
     {
-        const auto e = static_cast<ChessNS::EventType>(i);
+        const auto e = static_cast<ChessNS::EventFlag>(i);
         if (movement.hasFlag(e))
             result += " (" + ChessNS::toString(e) + ")";
     }

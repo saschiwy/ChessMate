@@ -1,3 +1,29 @@
+/*!
+* \brief:  Implements the test board class
+*
+* The MIT License (MIT)
+*
+* Copyright (c) 2020 Sascha Schiwy. All rights reserved.
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+ */
+
 #include "gtest/gtest.h"
 #include "ChessEngine/Board.h"
 
@@ -114,7 +140,7 @@ namespace ChessNS
 
         auto result = _board.move(origin, expectedDestination);
         ASSERT_EQ(MoveResult::valid, result.moveResult());
-        ASSERT_TRUE(result.hasFlag(EventType::capture));
+        ASSERT_TRUE(result.hasFlag(EventFlag::capture));
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
@@ -201,7 +227,7 @@ namespace ChessNS
 
         auto result = _board.move(destinationWhite1, destinationWhite3);
         ASSERT_EQ(MoveResult::invalid, result.moveResult());
-        ASSERT_FALSE(result.hasFlag(EventType::capture));
+        ASSERT_FALSE(result.hasFlag(EventFlag::capture));
 
         ASSERT_EQ(FigureType::pawn, _board.at(destinationBlack1).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(destinationWhite2).figure.getType());
@@ -223,7 +249,7 @@ namespace ChessNS
 
         auto result = _board.move(destinationWhite1, destinationWhite2);
         ASSERT_EQ(MoveResult::valid, result.moveResult());
-        ASSERT_TRUE(result.hasFlag(EventType::capture));
+        ASSERT_TRUE(result.hasFlag(EventFlag::capture));
 
         ASSERT_EQ(FigureType::none, _board.at(destinationBlack1).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(destinationWhite2).figure.getType());
@@ -241,7 +267,7 @@ namespace ChessNS
 
         auto result = _board.move(origin, expectedDestination);
         ASSERT_EQ(MoveResult::valid, result.moveResult());
-        ASSERT_TRUE(result.hasFlag(EventType::promotion));
+        ASSERT_TRUE(result.hasFlag(EventFlag::promotion));
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(expectedDestination).figure.getType());
@@ -263,7 +289,7 @@ namespace ChessNS
 
         auto result = _board.allowed(destinationWhite1, destinationWhite2);
         ASSERT_EQ(MoveResult::valid, result.moveResult());
-        ASSERT_TRUE(result.hasFlag(EventType::capture));
+        ASSERT_TRUE(result.hasFlag(EventFlag::capture));
 
         ASSERT_EQ(FigureType::pawn, _board.at(destinationBlack1).figure.getType());
         ASSERT_EQ(FigureType::pawn, _board.at(destinationWhite1).figure.getType());
@@ -352,7 +378,7 @@ namespace ChessNS
 
         auto result = _board.move(origin, target);
         ASSERT_EQ(MoveResult::valid, result.moveResult());
-        ASSERT_TRUE(result.hasFlag(EventType::capture));
+        ASSERT_TRUE(result.hasFlag(EventFlag::capture));
 
         ASSERT_EQ(FigureType::king, _board.at(target).figure.getType());
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
@@ -382,7 +408,7 @@ namespace ChessNS
 
         auto result = _board.move(origin, target);
         ASSERT_EQ(MoveResult::valid, result.moveResult());
-        ASSERT_TRUE(result.hasFlag(EventType::castling));
+        ASSERT_TRUE(result.hasFlag(EventFlag::castling));
 
         ASSERT_EQ(FigureType::king, _board.at(target).figure.getType());
         ASSERT_EQ(FigureType::rook, _board.at(target - Position(0,1)).figure.getType());
@@ -423,7 +449,7 @@ namespace ChessNS
 
         auto result = _board.move(origin, target);
         ASSERT_EQ(MoveResult::valid, result.moveResult());
-        ASSERT_TRUE(result.hasFlag(EventType::capture));
+        ASSERT_TRUE(result.hasFlag(EventFlag::capture));
 
         ASSERT_EQ(FigureType::none, _board.at(origin).figure.getType());
         ASSERT_EQ(GetParam(), _board.at(target).figure.getType());
@@ -581,7 +607,7 @@ namespace ChessNS
 
         auto result = _board.move(origin, target);
         ASSERT_EQ(MoveResult::valid, result.moveResult());
-        ASSERT_TRUE(result.hasFlag(EventType::capture));
+        ASSERT_TRUE(result.hasFlag(EventFlag::capture));
     }
 
     TEST_P(TestBoardDiagonalMove, move_diagonalFriendOnTarget_invalid)
@@ -675,7 +701,7 @@ namespace ChessNS
 
         auto result = _board.move(origin, target);
         ASSERT_EQ(MoveResult::valid, result.moveResult());
-        ASSERT_TRUE(result.hasFlag(EventType::capture));
+        ASSERT_TRUE(result.hasFlag(EventFlag::capture));
     }
 
     TEST_F(TestBoard, moveKnight_withFriendBeteween_valid)
