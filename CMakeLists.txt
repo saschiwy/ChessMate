@@ -25,6 +25,7 @@ cmake_minimum_required (VERSION 3.8)
 project ("ChessMate")
 
 option(BUILD_TESTS "Build test programs" ON)
+option(BUILD_DOC "Build documentation" ON)
 
 set(CHESS_MATE_VERSION 0.0.1)
 
@@ -64,4 +65,8 @@ add_subdirectory ("ChessMate")
 if (BUILD_TESTS)
     enable_testing()
     add_subdirectory(Tests)
+endif()
+
+if (BUILD_DOC)
+    add_subdirectory(doc)
 endif()
