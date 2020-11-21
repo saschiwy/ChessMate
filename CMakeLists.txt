@@ -25,7 +25,10 @@ cmake_minimum_required (VERSION 3.8)
 project ("ChessMate")
 
 option(BUILD_TESTS "Build test programs" ON)
-option(BUILD_DOC "Build documentation" ON)
+option(BUILD_DOC "Build documentation" OFF)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CHESS_MATE_VERSION 0.0.1)
 
