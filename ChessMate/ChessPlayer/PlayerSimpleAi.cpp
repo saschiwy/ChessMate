@@ -46,34 +46,55 @@ namespace ChessNS
 
     bool PlayerSimpleAi::changePromotedPawn(FigureType toType)
     {
+        if (!_board)
+            return false;
+
         _board->at(_lastValidMovement.destination()).figure.setType(toType);
         return true;
     }
 
+    void PlayerSimpleAi::setBoard(const std::shared_ptr<Board>& board)
+    {
+        _board = board;
+    }
+
     Movement PlayerSimpleAi::autoMove()
     {
-        auto movements = _board->getAllPossibleMoves(_playerColor);
+        if (!_board)
+            return Movement::invalid();
 
-        for (auto&& movement : movements)
-            if (movement.hasFlag(EventFlag::checkmate))
-                return movement;
-
-        for (auto&& movement : movements)
-            if (movement.hasFlag(EventFlag::check))
-                return movement;
-
-        for (auto&& movement : movements)
-            if (movement.hasFlag(EventFlag::promotion))
-                return movement;
+        Movement res;
+        auto     movements = _board->getAllPossibleMoves(_playerColor);
 
         for (auto&& movement : movements)
             if (movement.hasFlag(EventFlag::capture))
-                return movement;
+                res = movement;
 
-        const std::uniform_int_distribution<> dist(0, static_cast<int>(movements.size() - 1));
-        _lastValidMovement = _board->move(movements.at(dist(_gen)));
-        if (_lastValidMovement.hasFlag(EventFlag::promotion))
-            changePromotedPawn(FigureType::queen);
-        return _lastValidMovement;
+        for (auto&& movement : movements)
+            if (movement.hasFlag(EventFlag::promotion))
+                res = movement;
+
+        for (auto&& movement : movements)
+            if (movement.hasFlag(EventFlag::check))
+                res = movement;
+
+        for (auto&& movement : movements)
+            if (movement.hasFlag(EventFlag::checkmate))
+                res = movement;
+
+        if (!res.isValid() && !movements.empty())
+        {
+            std::uniform_int_distribution<> dist(0, static_cast<int>(movements.size() - 1));
+            res = movements.at(dist(_gen));
+        }
+
+        if (res.isValid())
+        {
+            res                = _board->move(res);
+            _lastValidMovement = res;
+            if (_lastValidMovement.hasFlag(EventFlag::promotion))
+                changePromotedPawn(FigureType::queen);
+        }
+        return res;
     }
 }

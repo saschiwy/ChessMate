@@ -29,6 +29,9 @@ namespace ChessNS
 {
     Movement PlayerHuman::move(const Movement& move)
     {
+        if (!_board)
+            return Movement::invalid();
+
         auto result = _board->move(move);
 
         if (result.isValid())
@@ -39,6 +42,9 @@ namespace ChessNS
 
     Movement PlayerHuman::move(const Position& origin, const Position& destination)
     {
+        if (!_board)
+            return Movement::invalid();
+
         auto result = _board->move(origin, destination);
 
         if (result.isValid())
@@ -57,5 +63,10 @@ namespace ChessNS
         }
 
         return false;
+    }
+
+    void PlayerHuman::setBoard(const std::shared_ptr<Board>& board)
+    {
+        _board = board;
     }
 }

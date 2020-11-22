@@ -47,6 +47,8 @@ namespace ChessNS
 
         bool changePromotedPawn(FigureType toType) override;
 
+        void setBoard(const std::shared_ptr<Board>& board) override;
+
     private:
 
         /*!

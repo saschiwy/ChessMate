@@ -13,7 +13,7 @@
       "variables": [
         {
           "name": "CMAKE_PREFIX_PATH",
-          "value": "C:/_Entwicklung/Qt/5.15.0/msvc2019_64",
+          "value": "C:/_Entwicklung/Qt/5.15.2/msvc2019_64",
           "type": "PATH"
         }
       ]
@@ -31,7 +31,7 @@
       "variables": [
         {
           "name": "CMAKE_PREFIX_PATH",
-          "value": "C:/_Entwicklung/Qt/5.15.0/msvc2019_64",
+          "value": "C:/_Entwicklung/Qt/5.15.2/msvc2019_64",
           "type": "PATH"
         }
       ]

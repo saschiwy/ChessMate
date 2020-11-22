@@ -5,7 +5,9 @@
 
 #include "ChessField.h"
 #include "ChessEngine/Board.h"
-#include <map>
+#include "ChessPlayer/IPlayer.h"
+#include <mutex>
+#include <thread>
 
 QT_BEGIN_NAMESPACE
 
@@ -31,14 +33,35 @@ public:
 
     std::shared_ptr<ChessNS::Board> getBoard() const;
 
-    void setBoard(const std::shared_ptr<ChessNS::Board>& board);
-
+private:
     void drawBoard();
 
-private:
+    void clearScene();
 
-    Ui::MainWindow*                 _ui;
-    QGraphicsScene*                 _boardScene{};
-    ChessNS::Matrix<ChessField*>    _fields;
-    std::shared_ptr<ChessNS::Board> _board;
+    void fieldPressed(const ChessNS::Position& position);
+
+    void startAiMove();
+
+    void finishAiMove();
+
+    void aiMove();
+
+    Ui::MainWindow*                   _ui;
+    QGraphicsScene*                   _boardScene{nullptr};
+    ChessNS::Matrix<ChessField*>      _fields;
+    std::shared_ptr<ChessNS::Board>   _board;
+    bool                              _selected{false};
+    ChessNS::Position                 _origin;
+    std::mutex                        _mtx;
+    std::mutex                        _aiMtx;
+    std::unique_ptr<ChessNS::IPlayer> _player;
+    std::unique_ptr<ChessNS::IPlayer> _ai;
+    std::thread                       _aiThread;
+    bool                              _aiFinished{false};
+
+public slots:
+    void redraw();
+
+signals:
+    void requestRedraw();
 };

@@ -1,24 +1,30 @@
 #include "ChessField.h"
+#include <utility>
 
-ChessField::ChessField(QGraphicsItem* parent, ChessNS::Position position)
-    : QGraphicsRectItem(parent)
+ChessField::ChessField(QGraphicsItem* parent, ChessNS::Position position, std::function<void(const ChessNS::Position&)> cb)
+    : QGraphicsRectItem(parent),
+      _cb(std::move(cb))
 {
     _position       = position;
     const auto cord = position.getCord();
     if ((cord.first + cord.second) % 2 == 0)
     {
-        _color = ChessNS::Color::black;
+        _color    = ChessNS::Color::black;
+        _stdColor = Qt::darkGray;
         _brush.setColor(Qt::darkGray);
     }
     else
     {
-        _color = ChessNS::Color::white;
+        _color    = ChessNS::Color::white;
+        _stdColor = Qt::lightGray;
         _brush.setColor(Qt::lightGray);
     }
 
     _brush.setStyle(Qt::SolidPattern);
     setBrush(_brush);
 }
+
+ChessField::~ChessField() { }
 
 ChessNS::Color ChessField::getColor() const
 {
@@ -37,15 +43,46 @@ QBrush ChessField::getBrush() const
 
 void ChessField::setFigure(const ChessNS::FigureType& figureType, const ChessNS::Color& color)
 {
+    _figureType  = figureType;
+    _figureColor = color;
     if (figureType == ChessNS::FigureType::none || color == ChessNS::Color::none)
-    {
-        _figure = nullptr;
         return;
+
+    actualizePix();
+}
+
+QGraphicsPixmapItem* ChessField::getFigure()
+{
+    return &_figure;
+}
+
+void ChessField::mousePressEvent(QGraphicsSceneMouseEvent*)
+{
+    if (_cb)
+        _cb(_position);
+}
+
+void ChessField::resetColor()
+{
+    _brush.setColor(_stdColor);
+    setBrush(_brush);
+}
+
+void ChessField::setColor(Qt::GlobalColor color)
+{
+    _brush.setColor(color);
+    setBrush(_brush);
+}
+
+void ChessField::actualizePix()
+{
+    if (_figureType == ChessNS::FigureType::none)
+    {
+        _figure.setPixmap(QPixmap());
     }
 
     QString pixPath = "./res/";
-
-    switch (figureType)
+    switch (_figureType)
     {
         case ChessNS::FigureType::king: pixPath += "King";
             break;
@@ -62,7 +99,7 @@ void ChessField::setFigure(const ChessNS::FigureType& figureType, const ChessNS:
         case ChessNS::FigureType::none: return;
     }
 
-    switch (color)
+    switch (_figureColor)
     {
         case ChessNS::Color::white: pixPath += "W.png";
             break;
@@ -72,17 +109,11 @@ void ChessField::setFigure(const ChessNS::FigureType& figureType, const ChessNS:
     }
 
     const auto pix = QPixmap(pixPath);
-    _figure        = new QGraphicsPixmapItem(this);
-    _figure->setPixmap(pix);
+    _figure.setPixmap(pix);
 
     auto rec = rect();
     rec.setX(rec.x() + rec.width() / 2 - (pix.width() / 2));
     rec.setY(rec.y() + rec.height() / 2 - (pix.height() / 2));
 
-    _figure->setPos(rec.x(), rec.y());
-}
-
-QGraphicsPixmapItem* ChessField::getFigure() const
-{
-    return _figure;
+    _figure.setPos(rec.x(), rec.y());
 }

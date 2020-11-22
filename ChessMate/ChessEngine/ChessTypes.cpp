@@ -25,6 +25,7 @@
  */
 
 #include "ChessTypes.h"
+#include <algorithm>
 
 namespace ChessNS
 {

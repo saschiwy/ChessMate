@@ -27,10 +27,13 @@ project ("ChessMate")
 option(BUILD_TESTS "Build test programs" ON)
 option(BUILD_DOC "Build documentation" OFF)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(CHESS_MATE_VERSION 0.0.1)
+
+if(UNIX)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread")
+endif()
 
 if (BUILD_TESTS)
     configure_file(libs/gtest.txt.in googletest-download/CMakeLists.txt)

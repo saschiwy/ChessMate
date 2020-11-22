@@ -26,6 +26,7 @@
 #include "IPlayer.h"
 #include "PlayerHuman.h"
 #include "PlayerSimpleAi.h"
+#include <memory>
 
 namespace ChessNS
 {

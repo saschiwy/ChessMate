@@ -2,12 +2,14 @@
 #include "./ui_ChessWindow.h"
 #include "ChessField.h"
 #include "ChessEngine/ChessTypes.h"
+#include <QDebug>
 
 ChessWindow::ChessWindow(QWidget* parent)
     : QMainWindow(parent),
       _ui(new Ui::MainWindow)
 {
     _ui->setupUi(this);
+    _board = std::make_shared<ChessNS::Board>();
 
     const int size = 600 / 8;
     _fields.assign(8, 8, nullptr);
@@ -17,29 +19,36 @@ ChessWindow::ChessWindow(QWidget* parent)
         for (int col = 0; col < 8; col++)
         {
             const auto pos  = ChessNS::Position(row, col);
-            auto*      item = new ChessField(nullptr, pos);
+            auto*      item = new ChessField(nullptr, pos, [this](const ChessNS::Position& posN) { fieldPressed(posN); });
             const auto x    = static_cast<qreal>(col * size);
             const auto y    = static_cast<qreal>((7 - row) * size);
 
             item->setRect(x, y, size, size);
             item->setBrush(item->getBrush());
-
             _fields.at(row, col) = item;
         }
     }
 
+    _boardScene = new QGraphicsScene(this);
+    _ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    _ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    _ui->graphicsView->setScene(_boardScene);
+
+    _player = ChessNS::IPlayer::createPlayer(ChessNS::PlayerType::human, ChessNS::Color::white, _board);
+    _ai     = ChessNS::IPlayer::createPlayer(ChessNS::PlayerType::simpleAi, ChessNS::Color::black, _board);
+    connect(this, SIGNAL(requestRedraw()), this, SLOT(redraw()));
     drawBoard();
 }
 
 ChessWindow::~ChessWindow()
 {
+    finishAiMove();
     delete _ui;
 }
 
 void ChessWindow::resize() const
 {
     _ui->graphicsView->fitInView(_boardScene->sceneRect(), Qt::KeepAspectRatio);
-    _ui->graphicsView->show();
 }
 
 void ChessWindow::resizeEvent(QResizeEvent* event)
@@ -53,31 +62,17 @@ std::shared_ptr<ChessNS::Board> ChessWindow::getBoard() const
     return _board;
 }
 
-void ChessWindow::setBoard(const std::shared_ptr<ChessNS::Board>& board)
+void ChessWindow::drawBoard()
 {
-    _board = board;
-    for (int row = 0; row < 8; row++)
+    for (int row = 0; row < 8 && _board; row++)
     {
         for (int col = 0; col < 8; col++)
         {
-            auto& f = board->at(static_cast<ChessNS::BoardRow>(row), static_cast<ChessNS::BoardColumn>(col));
-            if (f.empty)
-                continue;
-
-            auto coord = f.position.getCord();
-            _fields.at(coord.first, coord.second)->setFigure(f.figure.getType(), f.figure.getColor());
+            auto&      f    = _board->at(static_cast<ChessNS::BoardRow>(row), static_cast<ChessNS::BoardColumn>(col));
+            const auto cord = f.position.getCord();
+            _fields.at(cord.first, cord.second)->setFigure(f.figure.getType(), f.figure.getColor());
         }
     }
-
-    drawBoard();
-}
-
-void ChessWindow::drawBoard()
-{
-    _boardScene = new QGraphicsScene(this);
-    _ui->graphicsView->setScene(_boardScene);
-    _ui->graphicsView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    _ui->graphicsView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     const auto fieldSize = _fields.at(1, 1)->rect().height();
 
@@ -94,7 +89,9 @@ void ChessWindow::drawBoard()
 
         for (int col = 0; col < 8; col++)
         {
+            _fields.at(row, col)->actualizePix();
             _boardScene->addItem(_fields.at(row, col));
+            _boardScene->addItem(_fields.at(row, col)->getFigure());
         }
     }
 
@@ -113,4 +110,110 @@ void ChessWindow::drawBoard()
     }
 
     resize();
+}
+
+void ChessWindow::clearScene()
+{
+    _ui->graphicsView->setScene(nullptr);
+
+    for (auto&& field : _fields)
+    {
+        _boardScene->removeItem(field->getFigure());
+        _boardScene->removeItem(field);
+    }
+    _boardScene->clear();
+    _ui->graphicsView->setScene(_boardScene);
+}
+
+void ChessWindow::fieldPressed(const ChessNS::Position& position)
+{
+    std::unique_lock<std::mutex> l(_mtx);
+
+    if (!_selected)
+    {
+        if (_board->at(position).empty)
+            return;
+
+        if (_board->at(position).figure.getColor() != _board->getCurrentColorTurn())
+            return;
+
+        //if (_board->at(position).figure.getColor() != _player->getColor())
+        //    return;
+
+        auto possibilities = _board->getAllPossibleMoves(position);
+        for (auto&& possibility : possibilities)
+        {
+            const auto cord = possibility.destination().getCord();
+            _fields.at(cord.first, cord.second)->setColor(Qt::darkRed);
+        }
+
+        _origin   = position;
+        _selected = true;
+    }
+
+    else
+    {
+        _selected = false;
+        if (_board->move(_origin, position).moveResult() == ChessNS::MoveResult::valid &&
+            _board->at(position).figure.getColor() == _player->getColor())
+        {
+            _ai->move(ChessNS::Movement::invalid());
+        }
+
+        for (auto&& field : _fields)
+            field->resetColor();
+    }
+
+    clearScene();
+    drawBoard();
+}
+
+void ChessWindow::startAiMove()
+{
+    finishAiMove();
+    _aiThread = std::thread(&ChessWindow::aiMove, this);
+}
+
+void ChessWindow::finishAiMove()
+{
+    std::unique_lock<std::mutex> l(_aiMtx);
+    _aiFinished = true;
+
+    l.unlock();
+    if (_aiThread.joinable())
+        _aiThread.join();
+}
+
+void ChessWindow::aiMove()
+{
+    std::unique_lock<std::mutex> l(_aiMtx);
+    std::unique_lock<std::mutex> l2(_mtx);
+
+    ChessNS::Movement result;
+    _aiFinished = false;
+
+    do
+    {
+        result      = _ai->move(result);
+        _aiFinished = result.isValid();
+
+        if (!_aiFinished)
+        {
+            l.unlock();
+            l2.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            l2.lock();
+            l.lock();
+        }
+        else
+        {
+            requestRedraw();
+        }
+    }
+    while (!_aiFinished);
+}
+
+void ChessWindow::redraw()
+{
+    drawBoard();
 }

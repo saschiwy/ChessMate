@@ -262,6 +262,15 @@ namespace ChessNS
          */
         bool isFieldUnderAttack(Field& field, Color byColor);
 
+        /*!
+         * \fn  Color Board::getCurrentColorTurn() const;
+         *
+         * \brief   Gets current color turn
+         *
+         * \returns The current color turn.
+         */
+        Color getCurrentColorTurn() const;
+
     private:
 
         explicit Board(BoardStartType boardStart);

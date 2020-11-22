@@ -298,6 +298,11 @@ namespace ChessNS
         return false;
     }
 
+    Color Board::getCurrentColorTurn() const
+    {
+        return _currentColorTurn;
+    }
+
     void Board::createFigure(Field& field, FigureType figure, Color color)
     {
         field.figure = Figure(figure, color, field.position);

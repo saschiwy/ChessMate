@@ -33,6 +33,7 @@ target_link_libraries(ChessGui Qt5::Widgets)
 target_link_libraries(ChessGui ChessEngine)
 target_link_libraries(ChessGui ChessPlayer)
 
+
 if (WIN32)
 	set(QT_DIR ${Qt5_DIR}/../../../)
 	if (CMAKE_BUILD_TYPE STREQUAL "Debug")

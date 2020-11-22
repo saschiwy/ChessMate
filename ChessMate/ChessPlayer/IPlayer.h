@@ -26,6 +26,7 @@
 #pragma once
 #include "ChessEngine/ChessTypes.h"
 #include "ChessEngine/Board.h"
+#include <memory>
 
 namespace ChessNS
 {
@@ -109,6 +110,15 @@ namespace ChessNS
          * \returns The color.
          */
         Color getColor() const;
+
+        /*!
+         * \fn  virtual void IPlayer::setBoard(const std::shared_ptr<Board>& board) const;
+         *
+         * \brief   Sets a board
+         *
+         * \param   board   The board.
+         */
+        virtual void setBoard(const std::shared_ptr<Board>& board) = 0;
 
     protected:
         std::shared_ptr<Board> _board;
