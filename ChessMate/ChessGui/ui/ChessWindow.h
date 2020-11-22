@@ -46,6 +46,8 @@ private:
 
     void aiMove();
 
+    void printMoves();
+
     Ui::MainWindow*                   _ui;
     QGraphicsScene*                   _boardScene{nullptr};
     ChessNS::Matrix<ChessField*>      _fields;

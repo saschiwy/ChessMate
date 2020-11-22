@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt5 COMPONENTS Widgets Core Gui REQUIRED)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
@@ -29,7 +29,7 @@ set(CMAKE_AUTOUIC ON)
 file(GLOB_RECURSE SOURCES LIST_DIRECTORIES true *.h *.cpp)
 add_executable(ChessGui ${SOURCES})
 
-target_link_libraries(ChessGui Qt5::Widgets)
+target_link_libraries(ChessGui Qt5::Widgets Qt5::Core Qt5::Gui)
 target_link_libraries(ChessGui ChessEngine)
 target_link_libraries(ChessGui ChessPlayer)
 

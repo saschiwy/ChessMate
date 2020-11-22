@@ -4,6 +4,8 @@
 #include "ChessEngine/ChessTypes.h"
 #include <QDebug>
 
+#include "PromotionChose.h"
+
 ChessWindow::ChessWindow(QWidget* parent)
     : QMainWindow(parent),
       _ui(new Ui::MainWindow)
@@ -128,6 +130,7 @@ void ChessWindow::clearScene()
 void ChessWindow::fieldPressed(const ChessNS::Position& position)
 {
     std::unique_lock<std::mutex> l(_mtx);
+    ChessNS::Movement            res{};
 
     if (!_selected)
     {
@@ -154,18 +157,32 @@ void ChessWindow::fieldPressed(const ChessNS::Position& position)
     else
     {
         _selected = false;
-        if (_board->move(_origin, position).moveResult() == ChessNS::MoveResult::valid &&
+        res       = _board->move(_origin, position);
+
+        if (res.moveResult() == ChessNS::MoveResult::valid &&
             _board->at(position).figure.getColor() == _player->getColor())
         {
             _ai->move(ChessNS::Movement::invalid());
+        }
+
+        if (res.hasFlag(ChessNS::EventFlag::promotion) &&
+            _board->at(position).figure.getColor() == _player->getColor())
+        {
+            PromotionChose promotion(_player->getColor());
+            res.promotedTo() = promotion.trigger();
+            _board->at(position).figure.setType(res.promotedTo());
         }
 
         for (auto&& field : _fields)
             field->resetColor();
     }
 
-    clearScene();
-    drawBoard();
+    if (res.moveResult() == ChessNS::MoveResult::valid)
+    {
+        clearScene();
+        drawBoard();
+        printMoves();
+    }
 }
 
 void ChessWindow::startAiMove()
@@ -211,6 +228,27 @@ void ChessWindow::aiMove()
         }
     }
     while (!_aiFinished);
+}
+
+void ChessWindow::printMoves()
+{
+    _ui->listWidget->clear();
+    unsigned count = 1;
+
+    auto moves = _board->getAllMadeMoves();
+    for (auto&& move : moves)
+    {
+        std::string flags;
+        for (size_t i = 0; i < 5; i++)
+        {
+            const auto e = static_cast<ChessNS::EventFlag>(i);
+            if (move.hasFlag(e))
+                flags += " (" + ChessNS::toString(e) + ")";
+        }
+
+        _ui->listWidget->
+             addItem(QString::fromStdString(std::to_string(count++) + ". " + move.origin().toString() + "-" + move.destination().toString() + flags));
+    }
 }
 
 void ChessWindow::redraw()

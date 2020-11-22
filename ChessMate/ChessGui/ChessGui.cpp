@@ -7,5 +7,6 @@ int main(int argc, char* argv[])
     ChessWindow  board;
     board.show();
     board.resize();
+
     return QApplication::exec();
 }
